@@ -259,7 +259,9 @@ async function findPlace(q){
       .sort((a, b) => (rank[a.local_type] ?? 5) - (rank[b.local_type] ?? 5));
     if(!places.length){ msg(`We couldn't find "${q}". Try a nearby town or a postcode.`, true); return; }
     const exact = places.filter(p => p.name_1.toLowerCase() === q.toLowerCase());
-    if(places.length === 1 || (exact.length === 1 && places.length < 3)){
+    const big = exact.filter(p => p.local_type === "City" || p.local_type === "Town");
+    if(places.length === 1 || big.length === 1 || (exact.length === 1 && places.length < 3)){
+      if(big.length === 1) exact.splice(0, exact.length, big[0]);
       const p = exact[0] || places[0];
       setLoc(placeLabel(p), p.latitude, p.longitude, p.name_1);
       return;

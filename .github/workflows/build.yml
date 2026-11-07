@@ -1,0 +1,49 @@
+name: Build and publish Daily Briefing
+
+on:
+  schedule:
+    - cron: "7 * * * *"      # every hour
+  workflow_dispatch:          # "Run workflow" button
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Remember which articles were already checked for AI content, and past exclusions
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ai_cache.json
+            ai_exclusions_log.jsonl
+          key: ai-check-${{ github.run_id }}
+          restore-keys: ai-check-
+      - name: Fetch, cross-check and scan the news
+        run: python app.py --build site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

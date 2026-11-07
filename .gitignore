@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+settings.env
+site/
+ai_cache.json
+ai_cache.tmp
+ai_exclusions_log.jsonl
+.claude/
+.DS_Store

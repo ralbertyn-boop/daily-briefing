@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Briefing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f7f5f0; --paper:#ffffff; --ink:#1b1b1b; --muted:#666159; --line:#e3ded4;
+  --accent:#9b1c1c; --ok:#1f6f43; --ok-bg:#e5f3ea; --strong:#14532d; --strong-bg:#cfe9d8;
+  --warn:#8a5a00; --warn-bg:#fdf1d6; --chip:#f1ede5;
+  --g:#15803d; --g-bg:#dcfce7; --a:#b45309; --a-bg:#fef3c7; --r:#b91c1c; --r-bg:#fee2e2;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header{border-bottom:3px double var(--line);padding:22px 0 14px;text-align:center}
+.mast{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:clamp(30px,6vw,52px);letter-spacing:-.5px;margin:0}
+.date{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.12em;margin-top:4px}
+.stats{color:var(--muted);font-size:13px;margin-top:8px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 0}
+.tabs{display:flex;gap:4px}
+.tab{border:0;background:none;color:var(--muted);font:600 14px Inter,sans-serif;padding:8px 12px;border-radius:6px;cursor:pointer}
+.tab[aria-selected=true]{background:var(--ink);color:var(--bg)}
+select,input{font:14px Inter,sans-serif;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+.grow{flex:1}
+input[type=search]{min-width:160px;width:100%;max-width:260px}
+.btn{font:600 13px Inter,sans-serif;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:8px 12px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+main{padding:20px 0 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.card.lead{grid-column:1/-1;display:grid;grid-template-columns:1.2fr 1fr}
+.card img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--chip)}
+.card.lead img{height:100%;aspect-ratio:auto;min-height:260px}
+.body{padding:16px 18px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.badge{align-self:flex-start;font:600 12px Inter,sans-serif;padding:3px 9px;border-radius:99px;background:var(--ok-bg);color:var(--ok)}
+.badge.strong{background:var(--strong-bg);color:var(--strong)}
+h2{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:21px;line-height:1.25;margin:0}
+.lead h2{font-size:clamp(24px,3vw,32px)}
+.top{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rag{display:inline-flex;align-items:center;gap:6px;font:700 13px Inter,sans-serif;padding:3px 10px 3px 8px;border-radius:99px;cursor:help}
+.rag::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+.rag.green{background:var(--g-bg);color:var(--g)} .rag.amber{background:var(--a-bg);color:var(--a)} .rag.red{background:var(--r-bg);color:var(--r)}
+.rag small{font-weight:500;opacity:.85}
+.meter{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%}
+.meter i.green{background:var(--g)} .meter i.amber{background:var(--a)} .meter i.red{background:var(--r)}
+.why{font-size:12px;color:var(--muted);margin:6px 0 0;padding:0;list-style:none}
+.why li{display:flex;justify-content:space-between;gap:10px;padding:2px 0;border-bottom:1px dotted var(--line)}
+.why li.total{font-weight:700;color:var(--ink);border:0}
+.aibar{margin:14px auto 0;max-width:820px;border-radius:8px;padding:10px 14px;font-size:13px;text-align:left}
+.aibar.ok{background:var(--g-bg);color:var(--g)} .aibar.warn{background:var(--r-bg);color:var(--r)} .aibar.off{background:var(--a-bg);color:var(--a)}
+.aibar button{font:600 12px Inter,sans-serif;background:none;border:1px solid currentColor;color:inherit;border-radius:5px;padding:2px 8px;margin-left:6px;cursor:pointer}
+.exlist{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:10px;color:var(--ink)}
+.exlist li{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.exlist .ev{color:var(--muted);font-size:12px;margin-top:3px}
+.new{background:var(--r);color:var(--paper);font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-right:5px}
+.ailine{font-size:12px;color:var(--muted)}
+.ailine.warn{color:var(--a)} .ailine.bad{color:var(--r)}
+.aitag{font-size:11px;font-weight:600;color:var(--a);margin-left:4px;cursor:help}
+.toast{position:fixed;right:16px;bottom:16px;max-width:360px;background:var(--r);color:#fff;padding:12px 14px;border-radius:8px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:20;cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.sum{color:var(--muted);margin:0}
+.note{background:var(--warn-bg);color:var(--warn);font-size:13px;padding:7px 10px;border-radius:6px}
+.meta{font-size:12px;color:var(--muted)}
+details + details{margin-top:0}
+details{margin-top:auto;border-top:1px solid var(--line);padding-top:8px}
+summary{cursor:pointer;font-size:13px;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--muted)}
+details[open] summary::before{content:"▾ "}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chip{font-size:12px;background:var(--chip);border-radius:4px;padding:2px 7px}
+.srcs{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:8px}
+.srcs li{font-size:13px;line-height:1.35}
+.srcs b{display:block;font-size:12px;color:var(--accent)}
+.srcs a{text-decoration:none}
+.srcs a:hover{text-decoration:underline}
+.empty,.loading{text-align:center;color:var(--muted);padding:60px 0}
+.spin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:s 1s linear infinite;margin:0 auto 12px}
+@keyframes s{to{transform:rotate(360deg)}}
+footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:13px}
+footer h3{font-family:"Source Serif 4",Georgia,serif;color:var(--ink);font-size:18px;margin:0 0 6px}
+footer ol{padding-left:20px}
+.feeds{columns:3 220px;font-size:12px;margin-top:8px}
+.feeds div{break-inside:avoid}
+.bad{color:var(--accent)}
+@media (max-width:700px){
+  .card.lead{display:flex}
+  .card.lead img{min-height:0;aspect-ratio:16/9}
+  .grid{grid-template-columns:1fr}
+  input[type=search]{max-width:none}
+}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <h1 class="mast">The Daily Briefing</h1>
+  <div class="date" id="date"></div>
+  <div class="stats" id="stats">&nbsp;</div>
+  <div id="aibar"></div>
+</header>
+
+<nav>
+  <div class="wrap bar">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="world">World</button>
+      <button class="tab" role="tab" data-tab="uk">UK</button>
+      <button class="tab" role="tab" data-tab="local">Local</button>
+    </div>
+    <select id="region" aria-label="Region" hidden></select>
+    <select id="sort" aria-label="Sort by">
+      <option value="confirmed">Most confirmed</option>
+      <option value="score">Highest authenticity</option>
+      <option value="latest">Latest</option>
+    </select>
+    <select id="min" aria-label="Minimum sources">
+      <option value="2">2+ outlets</option>
+      <option value="3">3+ outlets</option>
+      <option value="4">4+ outlets</option>
+    </select>
+    <span class="grow"></span>
+    <input type="search" id="q" placeholder="Search stories" aria-label="Search stories">
+    <button class="btn" id="refresh">Refresh</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div id="out"><div class="loading"><div class="spin"></div>Fetching, cross-checking and scanning today's news for AI-generated content…<br><small>The first scan can take a few minutes. Later refreshes only check new articles.</small></div></div>
+</main>
+
+<footer class="wrap">
+  <h3>How stories are checked</h3>
+  <ol>
+    <li>Every hour the app reads the public news feeds of established news organisations (listed below). Only articles from the last <span id="hrs">36</span> hours are used.</li>
+    <li>Articles describing the same event are grouped by comparing the words in their headlines and summaries.</li>
+    <li>A story is only shown if <strong>at least two independent organisations</strong> reported it. Feeds from the same organisation (BBC UK and BBC World, for example) count once, and titles with the same owner (such as the Reach plc local papers) also count once, because they often share copy.</li>
+    <li>Where outlets give different death tolls in their headlines, the story is flagged so you can compare them.</li>
+  </ol>
+  <h3 style="margin-top:18px">AI-generated content check</h3>
+  <p>Before stories are matched, every report that could appear here is checked for signs that it was written by AI rather than a journalist:</p>
+  <ul>
+    <li><strong>Publisher labels:</strong> some publishers mark AI or automated content in the page itself, or add a note such as "This article was produced with the help of AI". A labelled article is always excluded.</li>
+    <li><strong>Writing patterns:</strong> stock AI phrasing, AI-style bylines and disclosure-like sentences are picked out.</li>
+    <li><strong>Claude review (switched off, paid):</strong> when switched on in <code>settings.env</code>, Claude reads each article's byline, labels and text, and judges whether the article itself was AI-generated. Writing about AI doesn't count. Articles it rates <em>likely AI-generated</em> with 80% confidence or more are excluded. Articles with <em>possible signs</em> stay in but lose 10 points from their story's score.</li>
+  </ul>
+  <p>Excluded articles are removed before stories are matched, so a story can lose its second source and drop off the page. You're told each time: in the bar at the top of this page, with a Mac notification, and in <code>ai_exclusions_log.jsonl</code>. No AI detector is perfect, and the evidence for each decision is shown so you can judge it yourself.</p>
+  <h3 style="margin-top:18px">Authenticity score</h3>
+  <p>Each story gets a percentage that sums up how well it is backed up. It is never 100%. Open "Why this score" on any story to see the breakdown.</p>
+  <ul>
+    <li><strong>Independent outlets confirming</strong> (up to 72 points): 2 outlets give 45, rising to 72 for 6 or more.</li>
+    <li><strong>Standing of those outlets</strong> (up to 15): public-service broadcasters and papers of record score highest, regional commercial titles lowest.</li>
+    <li><strong>How closely the reports agree</strong> (up to 10): reports that describe the same facts in similar terms score higher.</li>
+    <li><strong>International spread</strong> (up to 5): reported by newsrooms in three or more countries.</li>
+    <li><strong>Conflicting figures</strong> (minus 10): outlets give different death tolls.</li>
+  </ul>
+  <div class="legend">
+    <span class="rag green">75–98% <small>well corroborated</small></span>
+    <span class="rag amber">60–74% <small>corroborated, check the detail</small></span>
+    <span class="rag red">Below 60% <small>thinly sourced, treat with caution</small></span>
+  </div>
+  <p><strong>Limits:</strong> this is automatic cross-referencing, not human fact-checking. Two outlets agreeing makes a report more likely to be accurate, not certain. Occasionally unrelated articles get grouped, or one story is split into two. Always open the sources to read the detail. Reuters and AP don't offer public feeds, so they are not included directly.</p>
+  <details id="feedbox"><summary>Sources used today</summary><div class="feeds" id="feeds"></div></details>
+</footer>
+
+<script>
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d){ try { return localStorage.getItem(k) ?? d } catch { return d } },
+  set(k, v){ try { localStorage.setItem(k, v) } catch {} }
+};
+let data = null;
+const LIVE = ["localhost", "127.0.0.1"].includes(location.hostname);  // local server can refetch on demand
+let tab = store.get("tab", "world");
+let region = store.get("region", "");
+
+$("#date").textContent = new Date().toLocaleDateString("en-GB", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+$("#min").value = store.get("min", "2");
+$("#sort").value = store.get("sort", "confirmed");
+
+function ago(ts){
+  if(!ts) return "";
+  const m = Math.round((Date.now()/1000 - ts)/60);
+  if(m < 1) return "just now";
+  if(m < 60) return m + " min ago";
+  const h = Math.round(m/60);
+  return h < 24 ? h + (h === 1 ? " hour ago" : " hours ago") : Math.round(h/24) + " days ago";
+}
+const esc = s => (s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = u => /^https?:\/\//i.test(u || "") ? u : "#";
+
+const ragLabel = {green: "High", amber: "Medium", red: "Low"};
+function aiLine(s){
+  const parts = [];
+  let cls = "";
+  if(s.excluded && s.excluded.length){
+    cls = "bad";
+    parts.push(`🛑 ${s.excluded.length} report${s.excluded.length > 1 ? "s" : ""} removed as likely AI-generated (${s.excluded.map(x => esc(x.outlet)).join(", ")})`);
+  }
+  if(s.ai_possible){
+    cls = cls || "warn";
+    parts.push(`⚠ ${s.ai_possible} report${s.ai_possible > 1 ? "s show" : " shows"} possible signs of AI writing`);
+  }
+  if(!parts.length && s.ai_checked) parts.push(`✓ AI check: all ${s.ai_checked} reports clear`);
+  return parts.length ? `<div class="ailine ${cls}">${parts.join("<br>")}</div>` : "";
+}
+
+let showEx = false, toasted = false;
+function seenSet(){ try { return new Set(JSON.parse(store.get("seenEx", "[]"))) } catch { return new Set() } }
+function aiBar(){
+  const a = data.ai_check;
+  if(!a){ $("#aibar").innerHTML = ""; return; }
+  const ex = a.excluded || [];
+  const seen = seenSet();
+  const fresh = ex.filter(x => !seen.has(x.link));
+  const how = a.claude ? `Claude review on (${esc(a.model)}) plus publisher labels and writing patterns`
+                       : `Publisher labels and writing patterns only. ${esc(a.note || "Claude review is off")}. No paid services are used.`;
+  if(!ex.length){
+    $("#aibar").innerHTML = `<div class="aibar ${a.claude ? "ok" : "off"}">✓ AI-content check: ${a.checked} reports checked, none excluded. <span style="opacity:.8">${how}</span></div>`;
+    return;
+  }
+  const list = ex.map(x => `<li>${fresh.includes(x) ? `<span class="new">NEW</span>` : ""}<b>${esc(x.outlet)}</b>: <a href="${esc(safeUrl(x.link))}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>
+      <div class="ev">${x.ai.ai_likelihood != null ? x.ai.ai_likelihood + "% likely AI-generated · " : ""}${esc(x.ai.by || "")}: ${esc(x.ai.evidence || "")}</div>
+      <div class="ev">${x.story_dropped ? "The story it belonged to no longer has two independent sources, so it was removed." : "Removed from: " + esc(x.story || "")}</div></li>`).join("");
+  $("#aibar").innerHTML = `<div class="aibar warn">🛑 <strong>${ex.length} article${ex.length > 1 ? "s" : ""} excluded as likely AI-generated</strong>${fresh.length ? ` (${fresh.length} new)` : ""}. ${a.checked} reports checked.
+    <button id="exbtn">${showEx ? "Hide" : "Show"}</button>
+    <div style="opacity:.85;margin-top:3px">${how}</div>
+    ${showEx ? `<ul class="exlist">${list}</ul>` : ""}</div>`;
+  $("#exbtn").onclick = () => {
+    showEx = !showEx;
+    if(showEx){ ex.forEach(x => seen.add(x.link)); store.set("seenEx", JSON.stringify([...seen])); }
+    aiBar();
+  };
+  if(fresh.length && !toasted){
+    toasted = true;
+    const t = document.createElement("div");
+    t.className = "toast";
+    t.innerHTML = `🛑 Excluded ${fresh.length} article${fresh.length > 1 ? "s" : ""} as likely AI-generated<br><span style="opacity:.9">${esc(fresh[0].outlet)}: ${esc(fresh[0].title)}</span><br><u>Click to see why</u>`;
+    t.onclick = () => { t.remove(); showEx = false; $("#exbtn").click(); window.scrollTo({top: 0, behavior: "smooth"}); };
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 15000);
+  }
+}
+
+function card(s, lead){
+  const n = s.independent_count;
+  const a = s.authenticity;
+  const why = a.parts.map(p => `<li><span>${esc(p[0])}</span><span>${p[1] > 0 ? "+" : ""}${p[1]}${p[2] ? " / " + p[2] : ""}</span></li>`).join("")
+    + `<li class="total"><span>Authenticity score</span><span>${a.score}%</span></li>`;
+  const img = s.image ? `<img src="${esc(safeUrl(s.image))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : "";
+  const chips = s.sources.map(x => `<span class="chip">${esc(x.outlet)}</span>`).join("");
+  const list = s.sources.map(x => `<li><b>${esc(x.outlet)}${x.owner !== x.outlet ? ` <span style="color:var(--muted);font-weight:400">(${esc(x.owner)})</span>` : ""}</b>
+      <a href="${esc(safeUrl(x.link))}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>
+      <span class="meta"> · ${ago(x.ts)}</span>${x.ai && x.ai.verdict === "possibly_ai" ? `<span class="aitag" title="${esc(x.ai.evidence)}">⚠ possible AI signs</span>` : ""}</li>`).join("");
+  return `<article class="card${lead ? " lead" : ""}">${img}
+    <div class="body">
+      <div class="top">
+        <span class="rag ${a.rag}" title="Authenticity score: ${a.score}%">${a.score}% <small>${ragLabel[a.rag]}</small></span>
+        <span class="badge${n >= 4 ? " strong" : ""}">✓ ${n} independent outlets</span>
+      </div>
+      <div class="meter" aria-hidden="true"><i class="${a.rag}" style="width:${a.score}%"></i></div>
+      <h2>${esc(s.headline)}</h2>
+      ${s.summary ? `<p class="sum">${esc(s.summary)}</p>` : ""}
+      ${s.discrepancy ? `<div class="note">⚠ ${esc(s.discrepancy)}</div>` : ""}
+      ${aiLine(s)}
+      <div class="meta">First reported ${ago(s.first_seen)}${s.latest && s.latest !== s.first_seen ? " · latest " + ago(s.latest) : ""}</div>
+      <details><summary>Why this score</summary><ul class="why">${why}</ul></details>
+      <details><summary>Read the ${s.sources.length} reports</summary>
+        <ul class="srcs">${list}</ul>
+      </details>
+      <div class="chips">${chips}</div>
+    </div></article>`;
+}
+
+function render(){
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+  $("#region").hidden = tab !== "local";
+  if(!data) return;
+  const min = +$("#min").value;
+  const q = $("#q").value.trim().toLowerCase();
+  let list = data.stories.filter(s => s.independent_count >= min);
+  if(tab === "world") list = list.filter(s => s.section === "world");
+  if(tab === "uk") list = list.filter(s => s.section === "uk");
+  if(tab === "local") list = list.filter(s => s.regions.includes(region));
+  if(q) list = list.filter(s => (s.headline + " " + s.summary + " " + s.sources.map(x => x.title).join(" ")).toLowerCase().includes(q));
+  const sort = $("#sort").value;
+  if(sort === "score") list = [...list].sort((x, y) => y.authenticity.score - x.authenticity.score);
+  if(sort === "latest") list = [...list].sort((x, y) => (y.latest || 0) - (x.latest || 0));
+  if(!list.length){
+    $("#out").innerHTML = `<div class="empty">No stories here have been confirmed by ${min}+ independent outlets yet.${tab === "local" ? "<br>Local news has fewer outlets, so fewer stories can be cross-checked. Try another region or check back later." : ""}</div>`;
+    return;
+  }
+  $("#out").innerHTML = `<div class="grid">${list.map((s, i) => card(s, i === 0 && !q)).join("")}</div>`;
+}
+
+function fill(){
+  const ok = data.feeds.filter(f => f.ok);
+  const outlets = new Set(ok.map(f => f.outlet));
+  $("#stats").textContent = `Updated ${ago(data.generated)} · ${data.articles_scanned} articles from ${outlets.size} outlets checked · ${data.stories.length} stories confirmed by 2+ independent outlets`;
+  $("#hrs").textContent = data.window_hours;
+  aiBar();
+  const sel = $("#region");
+  sel.innerHTML = data.regions.map(r => `<option>${esc(r)}</option>`).join("");
+  if(!data.regions.includes(region)) region = data.regions[0];
+  sel.value = region;
+  const label = s => s === "world" ? "World" : s === "uk" ? "UK" : s.split(":")[1];
+  $("#feeds").innerHTML = data.feeds.map(f => `<div>${f.ok ? "✓" : `<span class="bad">✗</span>`} ${esc(f.outlet)} <span style="opacity:.7">(${esc(label(f.section))})</span>${f.ok ? "" : ` <span class="bad">unavailable</span>`}</div>`).join("");
+}
+
+async function load(force){
+  $("#refresh").disabled = true;
+  $("#refresh").textContent = "Checking…";
+  try{
+    const r = await fetch("news.json?" + (force && LIVE ? "refresh=1" : "t=" + Date.now()));
+    data = await r.json();
+    fill(); render();
+  }catch(e){
+    $("#out").innerHTML = `<div class="empty">Couldn't load the news. Please try again in a minute.</div>`;
+  }finally{
+    $("#refresh").disabled = false;
+    $("#refresh").textContent = "Refresh";
+  }
+}
+
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.tab; store.set("tab", tab); render(); });
+$("#region").onchange = e => { region = e.target.value; store.set("region", region); render(); };
+$("#min").onchange = e => { store.set("min", e.target.value); render(); };
+$("#q").oninput = render;
+$("#sort").onchange = e => { store.set("sort", e.target.value); render(); };
+$("#refresh").onclick = () => load(true);
+setInterval(() => data && fill(), 60000);
+render();
+load(false);
+</script>
+</body>
+</html>

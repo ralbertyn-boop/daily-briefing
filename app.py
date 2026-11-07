@@ -63,38 +63,124 @@ FEEDS = [
     ("Sky News", "uk", "https://feeds.skynews.com/feeds/rss/uk.xml"),
     ("Sky News", "uk", "https://feeds.skynews.com/feeds/rss/politics.xml"),
     ("Channel 4 News", "uk", "https://www.channel4.com/news/feed"),
-    # UK regions
-    ("BBC News", "region:London", "https://feeds.bbci.co.uk/news/england/london/rss.xml"),
-    ("The Guardian", "region:London", "https://www.theguardian.com/uk/london/rss"),
-    ("Evening Standard", "region:London", "https://www.standard.co.uk/news/london/rss"),
-    ("BBC News", "region:Manchester", "https://feeds.bbci.co.uk/news/england/manchester/rss.xml"),
-    ("Manchester Evening News", "region:Manchester", "https://www.manchestereveningnews.co.uk/news/?service=rss"),
-    ("BBC News", "region:Birmingham", "https://feeds.bbci.co.uk/news/england/birmingham_and_black_country/rss.xml"),
-    ("Birmingham Mail", "region:Birmingham", "https://www.birminghammail.co.uk/news/?service=rss"),
-    ("BBC News", "region:Liverpool", "https://feeds.bbci.co.uk/news/england/merseyside/rss.xml"),
-    ("Liverpool Echo", "region:Liverpool", "https://www.liverpoolecho.co.uk/news/?service=rss"),
-    ("BBC News", "region:Yorkshire", "https://feeds.bbci.co.uk/news/england/leeds_and_west_yorkshire/rss.xml"),
-    ("Yorkshire Post", "region:Yorkshire", "https://www.yorkshirepost.co.uk/news/rss"),
-    ("BBC News", "region:Bristol", "https://feeds.bbci.co.uk/news/england/bristol/rss.xml"),
-    ("Bristol Post", "region:Bristol", "https://www.bristolpost.co.uk/news/?service=rss"),
-    ("BBC News", "region:Scotland", "https://feeds.bbci.co.uk/news/scotland/rss.xml"),
-    ("The Guardian", "region:Scotland", "https://www.theguardian.com/uk/scotland/rss"),
-    ("The Herald", "region:Scotland", "https://www.heraldscotland.com/news/rss/"),
-    ("BBC News", "region:Wales", "https://feeds.bbci.co.uk/news/wales/rss.xml"),
-    ("The Guardian", "region:Wales", "https://www.theguardian.com/uk/wales/rss"),
-    ("WalesOnline", "region:Wales", "https://www.walesonline.co.uk/news/?service=rss"),
-    ("BBC News", "region:Northern Ireland", "https://feeds.bbci.co.uk/news/northern_ireland/rss.xml"),
-    ("Belfast Live", "region:Northern Ireland", "https://www.belfastlive.co.uk/news/?service=rss"),
-    ("RTÉ News", "region:Northern Ireland", "https://www.rte.ie/feeds/rss/?index=/news/"),
+    # Nation-wide feeds: they corroborate local stories but don't place them in an area
+    ("BBC News", "uk", "https://feeds.bbci.co.uk/news/scotland/rss.xml"),
+    ("BBC News", "uk", "https://feeds.bbci.co.uk/news/wales/rss.xml"),
+    ("The Guardian", "uk", "https://www.theguardian.com/uk/scotland/rss"),
+    ("The Guardian", "uk", "https://www.theguardian.com/uk/wales/rss"),
+    ("The Herald", "uk", "https://www.heraldscotland.com/news/rss/"),
+    ("The National", "uk", "https://www.thenational.scot/news/rss/"),
+    ("The Scotsman", "uk", "https://www.scotsman.com/news/rss"),
+    ("Nation.Cymru", "uk", "https://nation.cymru/feed/"),
+    ("RTÉ News", "world", "https://www.rte.ie/feeds/rss/?index=/news/"),
 ]
+
+# ---------------------------------------------------------------------------
+# Local areas. Each has a rough centre (lat, lon) so the page can pick the
+# nearest areas to a town, postcode or the viewer's location.
+# ---------------------------------------------------------------------------
+BBC = "https://feeds.bbci.co.uk/news/%s/rss.xml"
+REACH = "https://www.%s/news/?service=rss"
+NQ = "https://www.%s/news/rss/"
+AREAS = [
+    ("London", 51.507, -0.128, [("BBC News", BBC % "england/london"), ("The Guardian", "https://www.theguardian.com/uk/london/rss"),
+                                ("Evening Standard", "https://www.standard.co.uk/news/london/rss"), ("MyLondon", REACH % "mylondon.news")]),
+    ("Beds, Bucks and Herts", 51.90, -0.55, [("BBC News", BBC % "england/beds_bucks_and_herts")]),
+    ("Berkshire", 51.44, -1.00, [("BBC News", BBC % "england/berkshire")]),
+    ("Birmingham and Black Country", 52.49, -1.95, [("BBC News", BBC % "england/birmingham_and_black_country"),
+                                ("Birmingham Mail", REACH % "birminghammail.co.uk"), ("Express & Star", "https://www.expressandstar.com/news/rss/")]),
+    ("Bristol", 51.455, -2.59, [("BBC News", BBC % "england/bristol"), ("Bristol Post", REACH % "bristolpost.co.uk")]),
+    ("Cambridgeshire", 52.35, -0.05, [("BBC News", BBC % "england/cambridgeshire"), ("Cambridge News", REACH % "cambridge-news.co.uk"),
+                                ("Peterborough Telegraph", "https://www.peterboroughtoday.co.uk/news/rss")]),
+    ("Cheshire", 53.20, -2.55, [("Cheshire Live", REACH % "cheshire-live.co.uk")]),
+    ("Cornwall", 50.35, -4.90, [("BBC News", BBC % "england/cornwall"), ("Cornwall Live", REACH % "cornwalllive.com")]),
+    ("Coventry and Warwickshire", 52.35, -1.55, [("BBC News", BBC % "england/coventry_and_warwickshire"), ("Coventry Telegraph", REACH % "coventrytelegraph.net")]),
+    ("Cumbria", 54.55, -2.90, [("BBC News", BBC % "england/cumbria"), ("News & Star", NQ % "newsandstar.co.uk"),
+                                ("Westmorland Gazette", NQ % "thewestmorlandgazette.co.uk"), ("Times & Star", NQ % "timesandstar.co.uk")]),
+    ("Derbyshire", 53.00, -1.50, [("BBC News", BBC % "england/derbyshire"), ("Derby Telegraph", REACH % "derbytelegraph.co.uk")]),
+    ("Devon", 50.72, -3.75, [("BBC News", BBC % "england/devon"), ("Devon Live", REACH % "devonlive.com"), ("Plymouth Herald", REACH % "plymouthherald.co.uk")]),
+    ("Dorset", 50.75, -2.20, [("BBC News", BBC % "england/dorset"), ("Bournemouth Echo", NQ % "bournemouthecho.co.uk"), ("Dorset Echo", NQ % "dorsetecho.co.uk")]),
+    ("Essex", 51.77, 0.55, [("BBC News", BBC % "england/essex"), ("Essex Live", REACH % "essexlive.news")]),
+    ("Gloucestershire", 51.85, -2.25, [("BBC News", BBC % "england/gloucestershire"), ("Gloucestershire Live", REACH % "gloucestershirelive.co.uk")]),
+    ("Hampshire", 51.00, -1.25, [("BBC News", BBC % "england/hampshire"), ("Southern Daily Echo", NQ % "dailyecho.co.uk"),
+                                ("The News, Portsmouth", "https://www.portsmouth.co.uk/news/rss")]),
+    ("Hereford and Worcester", 52.15, -2.45, [("BBC News", BBC % "england/hereford_and_worcester"), ("Worcester News", NQ % "worcesternews.co.uk")]),
+    ("Humberside", 53.70, -0.35, [("BBC News", BBC % "england/humberside"), ("Hull Daily Mail", REACH % "hulldailymail.co.uk"),
+                                ("Grimsby Telegraph", REACH % "grimsbytelegraph.co.uk")]),
+    ("Kent", 51.25, 0.75, [("BBC News", BBC % "england/kent")]),
+    ("Lancashire", 53.80, -2.60, [("BBC News", BBC % "england/lancashire"), ("Lancashire Telegraph", NQ % "lancashiretelegraph.co.uk"),
+                                ("Lancashire Post", "https://www.lep.co.uk/news/rss"), ("Blackpool Gazette", "https://www.blackpoolgazette.co.uk/news/rss"),
+                                ("Lancs Live", REACH % "lancs.live")]),
+    ("Leeds and West Yorkshire", 53.75, -1.65, [("BBC News", BBC % "england/leeds_and_west_yorkshire"), ("Yorkshire Post", "https://www.yorkshirepost.co.uk/news/rss"),
+                                ("Telegraph & Argus", NQ % "thetelegraphandargus.co.uk"), ("Examiner Live", REACH % "examinerlive.co.uk"),
+                                ("Leeds Live", REACH % "leeds-live.co.uk")]),
+    ("Leicester", 52.63, -1.13, [("BBC News", BBC % "england/leicester"), ("Leicester Mercury", REACH % "leicestermercury.co.uk")]),
+    ("Lincolnshire", 53.10, -0.30, [("BBC News", BBC % "england/lincolnshire"), ("Lincolnshire Live", REACH % "lincolnshirelive.co.uk")]),
+    ("Manchester", 53.48, -2.24, [("BBC News", BBC % "england/manchester"), ("Manchester Evening News", REACH % "manchestereveningnews.co.uk"),
+                                ("The Bolton News", NQ % "theboltonnews.co.uk")]),
+    ("Merseyside", 53.41, -2.98, [("BBC News", BBC % "england/merseyside"), ("Liverpool Echo", REACH % "liverpoolecho.co.uk")]),
+    ("Norfolk", 52.65, 1.00, [("BBC News", BBC % "england/norfolk"), ("Eastern Daily Press", "https://www.edp24.co.uk/news/rss")]),
+    ("Northamptonshire", 52.30, -0.90, [("BBC News", BBC % "england/northamptonshire")]),
+    ("Nottingham", 53.00, -1.10, [("BBC News", BBC % "england/nottingham"), ("Nottingham Post", REACH % "nottinghampost.com")]),
+    ("Oxford", 51.75, -1.30, [("BBC News", BBC % "england/oxford"), ("Oxford Mail", NQ % "oxfordmail.co.uk")]),
+    ("Shropshire", 52.70, -2.75, [("BBC News", BBC % "england/shropshire"), ("Shropshire Star", "https://www.shropshirestar.com/news/rss/")]),
+    ("Somerset", 51.10, -3.00, [("BBC News", BBC % "england/somerset"), ("Somerset Live", REACH % "somersetlive.co.uk")]),
+    ("South Yorkshire", 53.45, -1.35, [("BBC News", BBC % "england/south_yorkshire"), ("The Star, Sheffield", "https://www.thestar.co.uk/news/rss")]),
+    ("Stoke and Staffordshire", 52.85, -2.05, [("BBC News", BBC % "england/stoke_and_staffordshire"), ("Stoke Sentinel", REACH % "stokesentinel.co.uk")]),
+    ("Suffolk", 52.20, 1.00, [("BBC News", BBC % "england/suffolk"), ("East Anglian Daily Times", "https://www.eadt.co.uk/news/rss")]),
+    ("Surrey", 51.25, -0.45, [("BBC News", BBC % "england/surrey"), ("Surrey Live", REACH % "getsurrey.co.uk")]),
+    ("Sussex", 50.92, -0.20, [("BBC News", BBC % "england/sussex"), ("The Argus", NQ % "theargus.co.uk")]),
+    ("Tees", 54.57, -1.23, [("BBC News", BBC % "england/tees"), ("Teesside Live", REACH % "gazettelive.co.uk"), ("The Northern Echo", NQ % "thenorthernecho.co.uk")]),
+    ("Tyne and Wear", 54.95, -1.55, [("BBC News", BBC % "england/tyne_and_wear"), ("Chronicle Live", REACH % "chroniclelive.co.uk"),
+                                ("Shields Gazette", "https://www.shieldsgazette.com/news/rss"), ("Sunderland Echo", "https://www.sunderlandecho.com/news/rss")]),
+    ("Wiltshire", 51.35, -1.95, [("BBC News", BBC % "england/wiltshire"), ("Swindon Advertiser", NQ % "swindonadvertiser.co.uk"),
+                                ("Wiltshire Times", NQ % "wiltshiretimes.co.uk"), ("Salisbury Journal", NQ % "salisburyjournal.co.uk")]),
+    ("York and North Yorkshire", 54.10, -1.30, [("BBC News", BBC % "england/york_and_north_yorkshire"), ("The Press, York", NQ % "yorkpress.co.uk")]),
+    ("Glasgow and West Scotland", 55.86, -4.25, [("BBC News", BBC % "scotland/glasgow_and_west"), ("Glasgow Times", NQ % "eveningtimes.co.uk"),
+                                ("Daily Record", REACH % "dailyrecord.co.uk")]),
+    ("Edinburgh, Fife and East Scotland", 55.95, -3.19, [("BBC News", BBC % "scotland/edinburgh_east_and_fife"),
+                                ("Edinburgh Evening News", "https://www.edinburghnews.scotsman.com/news/rss")]),
+    ("Highlands and Islands", 57.48, -4.80, [("BBC News", BBC % "scotland/highlands_and_islands"), ("Press and Journal", "https://www.pressandjournal.co.uk/feed/")]),
+    ("North East Scotland, Orkney and Shetland", 57.15, -2.30, [("BBC News", BBC % "scotland/north_east_orkney_and_shetland"),
+                                ("Press and Journal", "https://www.pressandjournal.co.uk/feed/")]),
+    ("South Scotland", 55.30, -3.50, [("BBC News", BBC % "scotland/south_scotland")]),
+    ("Tayside and Central Scotland", 56.40, -3.60, [("BBC News", BBC % "scotland/tayside_and_central"), ("The Courier", "https://www.thecourier.co.uk/feed/")]),
+    ("North West Wales", 53.05, -4.10, [("BBC News", BBC % "wales/north_west_wales"), ("Daily Post", REACH % "dailypost.co.uk")]),
+    ("North East Wales", 53.05, -3.20, [("BBC News", BBC % "wales/north_east_wales"), ("Daily Post", REACH % "dailypost.co.uk")]),
+    ("Mid Wales", 52.40, -3.60, [("BBC News", BBC % "wales/mid_wales")]),
+    ("South West Wales", 51.75, -4.20, [("BBC News", BBC % "wales/south_west_wales"), ("WalesOnline", REACH % "walesonline.co.uk")]),
+    ("South East Wales", 51.55, -3.10, [("BBC News", BBC % "wales/south_east_wales"), ("WalesOnline", REACH % "walesonline.co.uk"),
+                                ("South Wales Argus", NQ % "southwalesargus.co.uk")]),
+    ("Northern Ireland", 54.60, -6.50, [("BBC News", BBC % "northern_ireland"), ("Belfast Live", REACH % "belfastlive.co.uk"),
+                                ("The Irish News", "https://www.irishnews.com/arc/outboundfeeds/rss/"),
+                                ("News Letter", "https://www.newsletter.co.uk/news/rss")]),
+]
+for _name, _lat, _lon, _feeds in AREAS:
+    for _outlet, _url in _feeds:
+        FEEDS.append((_outlet, "region:" + _name, _url))
 
 # Titles owned by the same company often share copy, so they count as ONE
 # independent source between them.
-OWNER = {
-    "Manchester Evening News": "Reach plc", "Birmingham Mail": "Reach plc",
-    "Liverpool Echo": "Reach plc", "Bristol Post": "Reach plc",
-    "WalesOnline": "Reach plc", "Belfast Live": "Reach plc",
-}
+OWNER = {}
+for _group, _titles in {
+    "Reach plc": ["Manchester Evening News", "Birmingham Mail", "Liverpool Echo", "Bristol Post", "WalesOnline", "Belfast Live",
+                  "MyLondon", "Cambridge News", "Cheshire Live", "Cornwall Live", "Coventry Telegraph", "Derby Telegraph", "Devon Live",
+                  "Plymouth Herald", "Essex Live", "Gloucestershire Live", "Hull Daily Mail", "Grimsby Telegraph", "Lancs Live",
+                  "Examiner Live", "Leeds Live", "Leicester Mercury", "Lincolnshire Live", "Nottingham Post", "Somerset Live",
+                  "Stoke Sentinel", "Surrey Live", "Teesside Live", "Chronicle Live", "Daily Record", "Daily Post"],
+    "Newsquest": ["The Herald", "The National", "Glasgow Times", "News & Star", "Westmorland Gazette", "Times & Star",
+                  "Bournemouth Echo", "Dorset Echo", "Southern Daily Echo", "Worcester News", "Lancashire Telegraph",
+                  "Telegraph & Argus", "The Bolton News", "Eastern Daily Press", "East Anglian Daily Times", "Oxford Mail",
+                  "The Argus", "The Northern Echo", "Swindon Advertiser", "Wiltshire Times", "Salisbury Journal",
+                  "The Press, York", "South Wales Argus"],
+    "National World": ["Yorkshire Post", "The Star, Sheffield", "Lancashire Post", "Blackpool Gazette", "The News, Portsmouth",
+                       "Shields Gazette", "Sunderland Echo", "Peterborough Telegraph", "The Scotsman", "Edinburgh Evening News",
+                       "News Letter"],
+    "DC Thomson": ["Press and Journal", "The Courier"],
+    "MNA Media": ["Express & Star", "Shropshire Star"],
+}.items():
+    for _t in _titles:
+        OWNER[_t] = _group
 
 
 def owner(outlet):
@@ -445,15 +531,22 @@ def gather():
     for it in all_items:
         if it["ts"] and it["ts"] < cutoff:
             continue
-        key = it["link"] or (it["outlet"], it["title"])
+        # the same article can sit in two neighbouring areas' feeds: keep it once per area
+        key = (it["link"] or it["title"], it["section"])
         if key in seen:
             continue
         seen.add(key)
         items.append(it)
     # AI-content check on every article that could appear in a story
     groups = candidate_articles(items)
-    to_check = [m for g in groups for m in g]
+    to_check = list({m["link"]: m for g in groups for m in g}.values())
     excluded, ai_status = ai_check.scan(to_check)
+    for g in groups:  # copy results onto duplicate copies of the same article
+        for m in g:
+            if "ai" not in m:
+                twin = next((t for t in to_check if t["link"] == m["link"]), None)
+                if twin is not None:
+                    m["ai"] = twin.get("ai")
     bad = {a["link"] for a in excluded}
     kept = [it for it in items if it["link"] not in bad]
     stories = build_stories(kept)
@@ -481,13 +574,17 @@ def gather():
             print(f"   - {a['outlet']}: {a['title']}  ({a['ai'].get('evidence')})")
     ai_status["excluded"] = excluded_out
     ai_status["new_exclusions"] = [a["link"] for a in new]
-    regions = sorted({f[1].split(":", 1)[1] for f in FEEDS if f[1].startswith("region:")})
+    regions = [a[0] for a in AREAS]
+    ok_urls = {f["url"] for f in status if f["ok"]}
+    areas = [{"name": n, "lat": la, "lon": lo,
+              "outlets": sorted({o for o, u in fs if u in ok_urls})} for n, la, lo, fs in AREAS]
     return {
         "generated": time.time(),
         "took": round(time.time() - started, 1),
         "articles_scanned": len(items),
         "stories": stories,
         "regions": regions,
+        "areas": areas,
         "feeds": sorted(status, key=lambda s: (s["section"], s["outlet"])),
         "window_hours": MAX_AGE_HOURS,
         "ai_check": ai_status,

@@ -66,6 +66,20 @@ h2{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:21px;lin
 .ailine.warn{color:var(--a)} .ailine.bad{color:var(--r)}
 .aitag{font-size:11px;font-weight:600;color:var(--a);margin-left:4px;cursor:help}
 .toast{position:fixed;right:16px;bottom:16px;max-width:360px;background:var(--r);color:#fff;padding:12px 14px;border-radius:8px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:20;cursor:pointer}
+.locpanel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.locrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.locrow input{flex:1;min-width:200px}
+.locrow + .locrow{margin-top:10px}
+.or{color:var(--muted);font-size:13px}
+.sugg{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.sugg button{text-align:left;font:14px Inter,sans-serif;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 10px;cursor:pointer}
+.sugg button:hover{border-color:var(--muted)}
+.sugg small{color:var(--muted)}
+.locmsg{margin-top:10px;font-size:14px}
+.locmsg.err{color:var(--r)}
+.privacy{display:block;margin-top:8px;color:var(--muted);font-size:12px}
+.mention{align-self:flex-start;font:600 12px Inter,sans-serif;padding:2px 8px;border-radius:99px;background:var(--chip)}
+.exlist{max-height:360px;overflow:auto}
 .legend{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
 .sum{color:var(--muted);margin:0}
 .note{background:var(--warn-bg);color:var(--warn);font-size:13px;padding:7px 10px;border-radius:6px}
@@ -115,7 +129,6 @@ footer ol{padding-left:20px}
       <button class="tab" role="tab" data-tab="uk">UK</button>
       <button class="tab" role="tab" data-tab="local">Local</button>
     </div>
-    <select id="region" aria-label="Region" hidden></select>
     <select id="sort" aria-label="Sort by">
       <option value="confirmed">Most confirmed</option>
       <option value="score">Highest authenticity</option>
@@ -133,6 +146,21 @@ footer ol{padding-left:20px}
 </nav>
 
 <main class="wrap">
+  <section class="locpanel" id="locpanel" hidden>
+    <form class="locrow" id="locform">
+      <input id="locq" type="search" placeholder="Town, city, village or UK postcode" aria-label="Town, city, village or UK postcode" autocomplete="off">
+      <button class="btn" type="submit">Find</button>
+      <span class="or">or</span>
+      <button class="btn" type="button" id="geo">📍 Use my current location</button>
+    </form>
+    <div class="locrow">
+      <span class="or">or choose an area</span>
+      <select id="region" aria-label="Choose an area"></select>
+    </div>
+    <div class="sugg" id="sugg"></div>
+    <div class="locmsg" id="locmsg"></div>
+    <small class="privacy">Your current location stays in your browser: it's only used to work out the nearest area. Towns are looked up with the free postcodes.io service, and only the first half of a postcode (for example LA9) is sent.</small>
+  </section>
   <div id="out"><div class="loading"><div class="spin"></div>Fetching, cross-checking and scanning today's news for AI-generated content…<br><small>The first scan can take a few minutes. Later refreshes only check new articles.</small></div></div>
 </main>
 
@@ -179,7 +207,89 @@ const store = {
 let data = null;
 const LIVE = ["localhost", "127.0.0.1"].includes(location.hostname);  // local server can refetch on demand
 let tab = store.get("tab", "world");
-let region = store.get("region", "");
+let loc = null;   // {label, lat, lon, place, areas: [names]}
+try { loc = JSON.parse(store.get("loc", "null")) } catch { loc = null }
+const API = "https://api.postcodes.io";
+
+function km(a, b, c, d){
+  const r = x => x * Math.PI / 180, R = 6371;
+  const h = Math.sin(r(c - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(r(d - b) / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function nearestAreas(lat, lon){
+  const list = data.areas.map(a => ({name: a.name, d: km(lat, lon, a.lat, a.lon)})).sort((x, y) => x.d - y.d);
+  if(!list.length || list[0].d > 150) return null;   // outside the UK
+  return list.filter(a => a.d <= list[0].d + 25).slice(0, 3).map(a => a.name);
+}
+function setLoc(label, lat, lon, place){
+  const areas = nearestAreas(lat, lon);
+  $("#sugg").innerHTML = "";
+  if(!areas){
+    $("#locmsg").className = "locmsg err";
+    $("#locmsg").textContent = `${label.charAt(0).toUpperCase() + label.slice(1)} looks to be outside the UK. Local news covers the UK only.`;
+    return;
+  }
+  loc = {label, lat, lon, place: place || null, areas};
+  store.set("loc", JSON.stringify(loc));
+  render();
+}
+function msg(text, err){ $("#locmsg").className = "locmsg" + (err ? " err" : ""); $("#locmsg").textContent = text; }
+
+const FULL_PC = /^([A-Z]{1,2}[0-9][A-Z0-9]?)\s*([0-9][A-Z]{2})$/i, OUT_PC = /^[A-Z]{1,2}[0-9][A-Z0-9]?$/i;
+async function findPlace(q){
+  q = q.trim();
+  if(!q) return;
+  const pc = q.match(FULL_PC);
+  const outcode = pc ? pc[1] : (OUT_PC.test(q) ? q : null);
+  try{
+    if(outcode){
+      msg("Looking up postcode…");
+      const r = await fetch(`${API}/outcodes/${encodeURIComponent(outcode.toUpperCase())}`);
+      if(!r.ok){ msg(`We couldn't find the postcode ${q.toUpperCase()}. Check it and try again.`, true); return; }
+      const d = (await r.json()).result;
+      const near = (d.admin_district || []).length === 1 ? d.admin_district[0] : null;
+      setLoc(q.toUpperCase() + (near ? ` (${near})` : ""), d.latitude, d.longitude, null);
+      return;
+    }
+    msg("Searching…");
+    const r = await fetch(`${API}/places?q=${encodeURIComponent(q)}&limit=10`);
+    const res = r.ok ? ((await r.json()).result || []) : [];
+    const rank = {"City": 0, "Town": 1, "Village": 2, "Hamlet": 3, "Suburban Area": 4};
+    const places = res.filter(p => p.country !== "Isle of Man" && p.latitude)
+      .sort((a, b) => (rank[a.local_type] ?? 5) - (rank[b.local_type] ?? 5));
+    if(!places.length){ msg(`We couldn't find "${q}". Try a nearby town or a postcode.`, true); return; }
+    const exact = places.filter(p => p.name_1.toLowerCase() === q.toLowerCase());
+    if(places.length === 1 || (exact.length === 1 && places.length < 3)){
+      const p = exact[0] || places[0];
+      setLoc(placeLabel(p), p.latitude, p.longitude, p.name_1);
+      return;
+    }
+    msg(`Which ${q} do you mean?`);
+    $("#sugg").innerHTML = places.map((p, i) => `<button type="button" data-i="${i}">${esc(p.name_1)} <small>${esc([p.local_type, p.district_borough || p.county_unitary, p.region || p.country].filter(Boolean).join(" · "))}</small></button>`).join("");
+    $("#sugg").querySelectorAll("button").forEach(b => b.onclick = () => {
+      const p = places[+b.dataset.i];
+      setLoc(placeLabel(p), p.latitude, p.longitude, p.name_1);
+    });
+  }catch(e){
+    msg("The place search isn't responding. Choose an area from the list instead.", true);
+  }
+}
+const placeLabel = p => p.name_1 + ((p.district_borough || p.county_unitary) ? `, ${p.district_borough || p.county_unitary}` : "");
+
+function useMyLocation(){
+  if(!navigator.geolocation){ msg("Your browser can't share your location. Type a town or postcode instead.", true); return; }
+  msg("Finding your location…");
+  navigator.geolocation.getCurrentPosition(
+    p => setLoc("your current location", p.coords.latitude, p.coords.longitude, null),
+    e => msg(e.code === 1 ? "Location access was turned down. Type a town or postcode instead." : "We couldn't get your location. Type a town or postcode instead.", true),
+    {enableHighAccuracy: false, timeout: 15000, maximumAge: 600000}
+  );
+}
+const mentions = (s, place) => {
+  if(!place) return false;
+  const re = new RegExp("\\b" + place.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i");
+  return re.test(s.headline + " " + s.summary + " " + s.sources.map(x => x.title).join(" "));
+};
 
 $("#date").textContent = new Date().toLocaleDateString("en-GB", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
 $("#min").value = store.get("min", "2");
@@ -229,7 +339,7 @@ function aiBar(){
   const list = ex.map(x => `<li>${fresh.includes(x) ? `<span class="new">NEW</span>` : ""}<b>${esc(x.outlet)}</b>: <a href="${esc(safeUrl(x.link))}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>
       <div class="ev">${x.ai.ai_likelihood != null ? x.ai.ai_likelihood + "% likely AI-generated · " : ""}${esc(x.ai.by || "")}: ${esc(x.ai.evidence || "")}</div>
       <div class="ev">${x.story_dropped ? "The story it belonged to no longer has two independent sources, so it was removed." : "Removed from: " + esc(x.story || "")}</div></li>`).join("");
-  $("#aibar").innerHTML = `<div class="aibar warn">🛑 <strong>${ex.length} article${ex.length > 1 ? "s" : ""} excluded as likely AI-generated</strong>${fresh.length ? ` (${fresh.length} new)` : ""}. ${a.checked} reports checked.
+  $("#aibar").innerHTML = `<div class="aibar warn">🛑 <strong>${ex.length} article${ex.length > 1 ? "s" : ""} excluded as AI-generated or AI-assisted</strong>${fresh.length ? ` (${fresh.length} new)` : ""}. ${a.checked} reports checked.
     <button id="exbtn">${showEx ? "Hide" : "Show"}</button>
     <div style="opacity:.85;margin-top:3px">${how}</div>
     ${showEx ? `<ul class="exlist">${list}</ul>` : ""}</div>`;
@@ -242,7 +352,7 @@ function aiBar(){
     toasted = true;
     const t = document.createElement("div");
     t.className = "toast";
-    t.innerHTML = `🛑 Excluded ${fresh.length} article${fresh.length > 1 ? "s" : ""} as likely AI-generated<br><span style="opacity:.9">${esc(fresh[0].outlet)}: ${esc(fresh[0].title)}</span><br><u>Click to see why</u>`;
+    t.innerHTML = `🛑 Excluded ${fresh.length} article${fresh.length > 1 ? "s" : ""} as AI-generated or AI-assisted<br><span style="opacity:.9">${esc(fresh[0].outlet)}: ${esc(fresh[0].title)}</span><br><u>Click to see why</u>`;
     t.onclick = () => { t.remove(); showEx = false; $("#exbtn").click(); window.scrollTo({top: 0, behavior: "smooth"}); };
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 15000);
@@ -269,6 +379,7 @@ function card(s, lead){
       <h2>${esc(s.headline)}</h2>
       ${s.summary ? `<p class="sum">${esc(s.summary)}</p>` : ""}
       ${s.discrepancy ? `<div class="note">⚠ ${esc(s.discrepancy)}</div>` : ""}
+      ${tab === "local" && s._here && loc ? `<span class="mention">📍 Mentions ${esc(loc.place)}</span>` : ""}
       ${aiLine(s)}
       <div class="meta">First reported ${ago(s.first_seen)}${s.latest && s.latest !== s.first_seen ? " · latest " + ago(s.latest) : ""}</div>
       <details><summary>Why this score</summary><ul class="why">${why}</ul></details>
@@ -281,20 +392,32 @@ function card(s, lead){
 
 function render(){
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
-  $("#region").hidden = tab !== "local";
+  $("#locpanel").hidden = tab !== "local";
   if(!data) return;
   const min = +$("#min").value;
   const q = $("#q").value.trim().toLowerCase();
   let list = data.stories.filter(s => s.independent_count >= min);
   if(tab === "world") list = list.filter(s => s.section === "world");
   if(tab === "uk") list = list.filter(s => s.section === "uk");
-  if(tab === "local") list = list.filter(s => s.regions.includes(region));
+  if(tab === "local"){
+    if(!loc){
+      $("#out").innerHTML = `<div class="empty">Type a town, city, village or postcode above, use your current location, or choose an area.</div>`;
+      return;
+    }
+    if(!loc.areas){ loc.areas = nearestAreas(loc.lat, loc.lon) || []; }
+    $("#locmsg").className = "locmsg";
+    $("#locmsg").innerHTML = `Showing local news for <strong>${esc(loc.label)}</strong> · area${loc.areas.length > 1 ? "s" : ""}: ${loc.areas.map(esc).join(", ")}`;
+    $("#region").value = loc.areas.length === 1 && loc.label === loc.areas[0] ? loc.areas[0] : "";
+    list = list.filter(s => s.regions.some(r => loc.areas.includes(r)));
+    list.forEach(s => s._here = mentions(s, loc.place));
+    list = [...list].sort((x, y) => (y._here ? 1 : 0) - (x._here ? 1 : 0));
+  }
   if(q) list = list.filter(s => (s.headline + " " + s.summary + " " + s.sources.map(x => x.title).join(" ")).toLowerCase().includes(q));
   const sort = $("#sort").value;
   if(sort === "score") list = [...list].sort((x, y) => y.authenticity.score - x.authenticity.score);
   if(sort === "latest") list = [...list].sort((x, y) => (y.latest || 0) - (x.latest || 0));
   if(!list.length){
-    $("#out").innerHTML = `<div class="empty">No stories here have been confirmed by ${min}+ independent outlets yet.${tab === "local" ? "<br>Local news has fewer outlets, so fewer stories can be cross-checked. Try another region or check back later." : ""}</div>`;
+    $("#out").innerHTML = `<div class="empty">No stories here have been confirmed by ${min}+ independent outlets yet.${tab === "local" ? "<br>Local news has fewer outlets, so fewer stories can be cross-checked. Try a nearby town or check back later." : ""}</div>`;
     return;
   }
   $("#out").innerHTML = `<div class="grid">${list.map((s, i) => card(s, i === 0 && !q)).join("")}</div>`;
@@ -307,9 +430,8 @@ function fill(){
   $("#hrs").textContent = data.window_hours;
   aiBar();
   const sel = $("#region");
-  sel.innerHTML = data.regions.map(r => `<option>${esc(r)}</option>`).join("");
-  if(!data.regions.includes(region)) region = data.regions[0];
-  sel.value = region;
+  sel.innerHTML = `<option value="">Choose…</option>` + (data.areas || []).map(a => `<option>${esc(a.name)}</option>`).join("");
+  if(loc && loc.areas && loc.areas.length === 1 && loc.label === loc.areas[0]) sel.value = loc.areas[0];
   const label = s => s === "world" ? "World" : s === "uk" ? "UK" : s.split(":")[1];
   $("#feeds").innerHTML = data.feeds.map(f => `<div>${f.ok ? "✓" : `<span class="bad">✗</span>`} ${esc(f.outlet)} <span style="opacity:.7">(${esc(label(f.section))})</span>${f.ok ? "" : ` <span class="bad">unavailable</span>`}</div>`).join("");
 }
@@ -330,7 +452,16 @@ async function load(force){
 }
 
 document.querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.tab; store.set("tab", tab); render(); });
-$("#region").onchange = e => { region = e.target.value; store.set("region", region); render(); };
+$("#region").onchange = e => {
+  const a = (data.areas || []).find(x => x.name === e.target.value);
+  if(!a) return;
+  $("#sugg").innerHTML = "";
+  loc = {label: a.name, lat: a.lat, lon: a.lon, place: null, areas: [a.name]};
+  store.set("loc", JSON.stringify(loc));
+  render();
+};
+$("#locform").onsubmit = e => { e.preventDefault(); findPlace($("#locq").value); };
+$("#geo").onclick = useMyLocation;
 $("#min").onchange = e => { store.set("min", e.target.value); render(); };
 $("#q").oninput = render;
 $("#sort").onchange = e => { store.set("sort", e.target.value); render(); };

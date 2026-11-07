@@ -42,6 +42,11 @@ main{padding:20px 0 40px}
 .body{padding:16px 18px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
 .badge{align-self:flex-start;font:600 12px Inter,sans-serif;padding:3px 9px;border-radius:99px;background:var(--ok-bg);color:var(--ok)}
 .badge.strong{background:var(--strong-bg);color:var(--strong)}
+h2 a{text-decoration:none}
+h2 a:hover{text-decoration:underline;text-underline-offset:3px}
+.readbtn{align-self:flex-start;font:600 13px Inter,sans-serif;color:var(--paper);background:var(--ink);text-decoration:none;padding:7px 12px;border-radius:6px}
+.readbtn:hover{opacity:.85}
+.imglink{display:block}
 h2{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:21px;line-height:1.25;margin:0}
 .lead h2{font-size:clamp(24px,3vw,32px)}
 .top{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -366,7 +371,15 @@ function card(s, lead){
   const a = s.authenticity;
   const why = a.parts.map(p => `<li><span>${esc(p[0])}</span><span>${p[1] > 0 ? "+" : ""}${p[1]}${p[2] ? " / " + p[2] : ""}</span></li>`).join("")
     + `<li class="total"><span>Authenticity score</span><span>${a.score}%</span></li>`;
-  const img = s.image ? `<img src="${esc(safeUrl(s.image))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : "";
+  // open the main report, or a free-to-read one if the main report is behind a paywall
+  const PAYWALL = ["Financial Times", "The New York Times", "The Washington Post"];
+  let readUrl = s.link, readBy = s.lead_outlet;
+  if(!readUrl || PAYWALL.includes(readBy)){
+    const free = s.sources.find(x => !PAYWALL.includes(x.outlet)) || s.sources[0];
+    if(free){ readUrl = free.link; readBy = free.outlet; }
+  }
+  const url = esc(safeUrl(readUrl)), by = esc(readBy || "");
+  const img = s.image ? `<a class="imglink" href="${url}" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true"><img src="${esc(safeUrl(s.image))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></a>` : "";
   const chips = s.sources.map(x => `<span class="chip">${esc(x.outlet)}</span>`).join("");
   const list = s.sources.map(x => `<li><b>${esc(x.outlet)}${x.owner !== x.outlet ? ` <span style="color:var(--muted);font-weight:400">(${esc(x.owner)})</span>` : ""}</b>
       <a href="${esc(safeUrl(x.link))}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>
@@ -378,14 +391,15 @@ function card(s, lead){
         <span class="badge${n >= 4 ? " strong" : ""}">✓ ${n} independent outlets</span>
       </div>
       <div class="meter" aria-hidden="true"><i class="${a.rag}" style="width:${a.score}%"></i></div>
-      <h2>${esc(s.headline)}</h2>
+      <h2><a href="${url}" target="_blank" rel="noopener noreferrer">${esc(s.headline)}</a></h2>
       ${s.summary ? `<p class="sum">${esc(s.summary)}</p>` : ""}
       ${s.discrepancy ? `<div class="note">⚠ ${esc(s.discrepancy)}</div>` : ""}
+      <a class="readbtn" href="${url}" target="_blank" rel="noopener noreferrer">Read at ${by} ↗</a>
       ${tab === "local" && s._here && loc ? `<span class="mention">📍 Mentions ${esc(loc.place)}</span>` : ""}
       ${aiLine(s)}
       <div class="meta">First reported ${ago(s.first_seen)}${s.latest && s.latest !== s.first_seen ? " · latest " + ago(s.latest) : ""}</div>
       <details><summary>Why this score</summary><ul class="why">${why}</ul></details>
-      <details><summary>Read the ${s.sources.length} reports</summary>
+      <details><summary>Compare all ${s.sources.length} reports</summary>
         <ul class="srcs">${list}</ul>
       </details>
       <div class="chips">${chips}</div>

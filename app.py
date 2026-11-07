@@ -487,6 +487,8 @@ def build_stories(items):
         stories.append({
             "authenticity": auth,
             "headline": lead["title"],
+            "link": lead["link"],
+            "lead_outlet": lead["outlet"],
             "summary": lead["summary"] or next((m["summary"] for m in sources if m["summary"]), ""),
             "image": image,
             "section": main,

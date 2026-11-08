@@ -30,6 +30,11 @@ nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid
 .tab[aria-selected=true]{background:var(--ink);color:var(--bg)}
 select,input{font:14px Inter,sans-serif;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
 .grow{flex:1}
+.searchform{display:flex;gap:6px;align-items:center;flex:0 1 340px;min-width:220px}
+.searchform input{flex:1;max-width:none !important}
+.btn.searchbtn{background:var(--ink);color:var(--bg);border-color:var(--ink);white-space:nowrap}
+.searchnote{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--chip);border-radius:8px;padding:9px 14px;margin-bottom:16px;font-size:14px}
+.searchnote button{font:600 13px Inter,sans-serif;background:none;border:1px solid var(--muted);color:var(--ink);border-radius:5px;padding:3px 9px;cursor:pointer}
 input[type=search]{min-width:160px;width:100%;max-width:260px}
 .btn{font:600 13px Inter,sans-serif;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:8px 12px;cursor:pointer}
 .btn:hover{border-color:var(--muted)}
@@ -162,7 +167,10 @@ footer ol{padding-left:20px}
       <option value="4">4+ outlets</option>
     </select>
     <span class="grow"></span>
-    <input type="search" id="q" placeholder="Search stories" aria-label="Search stories">
+    <form id="searchform" class="searchform" role="search">
+      <input type="search" id="q" placeholder="Search all stories" aria-label="Search stories" enterkeyhint="search">
+      <button class="btn searchbtn" type="submit">🔍 Search</button>
+    </form>
     <button class="btn" id="refresh">Refresh</button>
   </div>
 </nav>
@@ -183,6 +191,7 @@ footer ol{padding-left:20px}
     <div class="locmsg" id="locmsg"></div>
     <small class="privacy">Your current location stays in your browser: it's only used to work out the nearest area. Towns are looked up with the free postcodes.io service, and only the first half of a postcode (for example LA9) is sent.</small>
   </section>
+  <div id="searchnote"></div>
   <div id="out"><div class="loading"><div class="spin"></div>Fetching, cross-checking and scanning today's news for AI-generated content…<br><small>The first scan can take a few minutes. Later refreshes only check new articles.</small></div></div>
   <section class="sportsec" id="sportsec" aria-labelledby="sporttitle">
     <div class="sporthead">
@@ -456,7 +465,17 @@ function renderSport(){
   }
   $("#sportout").innerHTML = `<div class="grid">${list.map(s => card(s, false)).join("")}</div>`;
 }
-function render(){ renderNews(); renderSport(); }
+function render(){ renderNews(); renderSport(); searchNote(); }
+function searchNote(){
+  const q = $("#q").value.trim();
+  if(!q || !data){ $("#searchnote").innerHTML = ""; return; }
+  const news = document.querySelectorAll("#out .card").length, sport = document.querySelectorAll("#sportout .card").length;
+  const where = "news";
+  $("#searchnote").innerHTML = `<span>🔍 <strong>${news}</strong> ${where} ${news === 1 ? "story" : "stories"} and <strong>${sport}</strong> sport ${sport === 1 ? "story" : "stories"} match “${esc(q)}”</span>`
+    + (sport ? `<a href="#sportsec">See sport results ↓</a>` : "")
+    + `<button type="button" id="clearq">Clear search</button>`;
+  $("#clearq").onclick = () => { $("#q").value = ""; render(); $("#q").focus(); };
+}
 function renderNews(){
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
   $("#locpanel").hidden = tab !== "local";
@@ -465,9 +484,11 @@ function renderNews(){
   const q = $("#q").value.trim().toLowerCase();
   let list = data.stories.filter(s => s.independent_count >= min);
   list = list.filter(s => s.section !== "sport");
-  if(tab === "world") list = list.filter(s => s.section === "world");
-  if(tab === "uk") list = list.filter(s => s.section === "uk");
-  if(tab === "local"){
+  const searching = !!$("#q").value.trim();
+  if(searching && tab === "local" && loc) $("#locmsg").innerHTML = "Searching all news. Clear the search to see local news again.";
+  if(!searching && tab === "world") list = list.filter(s => s.section === "world");
+  if(!searching && tab === "uk") list = list.filter(s => s.section === "uk");
+  if(!searching && tab === "local"){
     if(!loc){
       $("#out").innerHTML = `<div class="empty">Type a town, city, village or postcode above, use your current location, or choose an area.</div>`;
       return;
@@ -485,6 +506,7 @@ function renderNews(){
   if(sort === "score") list = [...list].sort((x, y) => y.authenticity.score - x.authenticity.score);
   if(sort === "latest") list = [...list].sort((x, y) => (y.latest || 0) - (x.latest || 0));
   if(!list.length){
+    if(searching){ $("#out").innerHTML = `<div class="empty">No news stories match “${esc($("#q").value.trim())}”. Try a different word.</div>`; return; }
     $("#out").innerHTML = `<div class="empty">No stories here have been confirmed by ${min}+ independent outlets yet.${tab === "local" ? "<br>Local news has fewer outlets, so fewer stories can be cross-checked. Try a nearby town or check back later." : ""}</div>`;
     return;
   }
@@ -532,6 +554,12 @@ $("#locform").onsubmit = e => { e.preventDefault(); findPlace($("#locq").value);
 $("#geo").onclick = useMyLocation;
 $("#min").onchange = e => { store.set("min", e.target.value); render(); };
 $("#q").oninput = render;
+$("#searchform").onsubmit = e => {
+  e.preventDefault();
+  render();
+  $("#q").blur();   // closes the phone keyboard
+  $("#searchnote").scrollIntoView({behavior: "smooth", block: "center"});
+};
 $("#sportsel").onchange = e => { store.set("sport", e.target.value); renderSport(); };
 $("#sporttop").onclick = e => { e.preventDefault(); window.scrollTo({top: 0, behavior: "smooth"}); };
 $("#sort").onchange = e => { store.set("sort", e.target.value); render(); };

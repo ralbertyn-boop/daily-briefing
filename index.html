@@ -85,7 +85,7 @@ h2{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:21px;lin
 .privacy{display:block;margin-top:8px;color:var(--muted);font-size:12px}
 .mention{align-self:flex-start;font:600 12px Inter,sans-serif;padding:2px 8px;border-radius:99px;background:var(--chip)}
 .exlist{max-height:360px;overflow:auto}
-.sportsec{margin-top:40px;padding-top:22px;border-top:3px double var(--line)}
+.sportsec{scroll-margin-top:70px;margin-top:40px;padding-top:22px;border-top:3px double var(--line)}
 .sporthead{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
 .sporthead h2{font-size:30px}
 .sporthead label{font-size:14px;color:var(--muted);display:flex;gap:8px;align-items:center}
@@ -117,6 +117,7 @@ footer ol{padding-left:20px}
 .feeds div{break-inside:avoid}
 .bad{color:var(--accent)}
 @media (max-width:700px){
+  nav{position:static}
   .card.lead{display:flex}
   .card.lead img{min-height:0;aspect-ratio:16/9}
   .grid{grid-template-columns:1fr}
@@ -144,6 +145,17 @@ footer ol{padding-left:20px}
       <option value="score">Highest authenticity</option>
       <option value="latest">Latest</option>
     </select>
+    <select id="sportsel" aria-label="Sport shown in the Sport section" title="Sport shown in the Sport section at the end of the page">
+      <option value="">Sport: all</option>
+      <option value="Football">Sport: ⚽ Football (soccer)</option>
+      <option value="Rugby">Sport: 🏉 Rugby</option>
+      <option value="Cricket">Sport: 🏏 Cricket</option>
+      <option value="Motor racing">Sport: 🏎️ Motor racing</option>
+      <option value="Golf">Sport: ⛳ Golf</option>
+      <option value="NFL">Sport: 🏈 NFL</option>
+      <option value="Grand Tour cycling">Sport: 🚴 Grand Tour cycling</option>
+    </select>
+    <a class="btn" href="#sportsec" id="gosport" style="text-decoration:none">Go to sport ↓</a>
     <select id="min" aria-label="Minimum sources">
       <option value="2">2+ outlets</option>
       <option value="3">3+ outlets</option>
@@ -175,18 +187,7 @@ footer ol{padding-left:20px}
   <section class="sportsec" id="sportsec" aria-labelledby="sporttitle">
     <div class="sporthead">
       <h2 id="sporttitle">Sport</h2>
-      <label>Your sport
-        <select id="sportsel" aria-label="Choose a sport">
-          <option value="">All sports</option>
-          <option value="Football">⚽ Football (soccer)</option>
-          <option value="Rugby">🏉 Rugby</option>
-          <option value="Cricket">🏏 Cricket</option>
-          <option value="Motor racing">🏎️ Motor racing</option>
-          <option value="Golf">⛳ Golf</option>
-          <option value="NFL">🏈 NFL</option>
-          <option value="Grand Tour cycling">🚴 Grand Tour cycling</option>
-        </select>
-      </label>
+      <a href="#" id="sporttop" class="or">Back to top ↑</a>
     </div>
     <div id="sportout"></div>
   </section>
@@ -443,8 +444,9 @@ function common(list){
   return list;
 }
 function renderSport(){
-  if(!data) return;
   const pick = $("#sportsel").value;
+  $("#sporttitle").textContent = pick ? `Sport: ${pick}` : "Sport";
+  if(!data) return;
   let list = data.stories.filter(s => s.section === "sport" && (!pick || (s.sports || []).includes(pick)));
   list = common(list);
   if(!list.length){
@@ -531,6 +533,7 @@ $("#geo").onclick = useMyLocation;
 $("#min").onchange = e => { store.set("min", e.target.value); render(); };
 $("#q").oninput = render;
 $("#sportsel").onchange = e => { store.set("sport", e.target.value); renderSport(); };
+$("#sporttop").onclick = e => { e.preventDefault(); window.scrollTo({top: 0, behavior: "smooth"}); };
 $("#sort").onchange = e => { store.set("sort", e.target.value); render(); };
 $("#refresh").onclick = () => load(true);
 setInterval(() => data && fill(), 60000);

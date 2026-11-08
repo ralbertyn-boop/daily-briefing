@@ -159,6 +159,37 @@ for _name, _lat, _lon, _feeds in AREAS:
     for _outlet, _url in _feeds:
         FEEDS.append((_outlet, "region:" + _name, _url))
 
+# ---------------------------------------------------------------------------
+# Sport. Shown in its own section; a sport story also needs 2+ independent outlets.
+# ---------------------------------------------------------------------------
+BBCS = "https://feeds.bbci.co.uk/sport/%s/rss.xml"
+GU = "https://www.theguardian.com/%s/rss"
+SKY = "https://www.skysports.com/rss/%s"
+SPORTS = {
+    "Football": [("BBC Sport", BBCS % "football"), ("The Guardian", GU % "football"), ("Sky Sports", SKY % "11095"),
+                 ("ESPN", "https://www.espn.com/espn/rss/soccer/news"), ("CBS Sports", "https://www.cbssports.com/rss/headlines/soccer/")],
+    "Rugby": [("BBC Sport", BBCS % "rugby-union"), ("BBC Sport", BBCS % "rugby-league"), ("The Guardian", GU % "sport/rugby-union"),
+              ("The Guardian", GU % "sport/rugbyleague"), ("Sky Sports", SKY % "12321"), ("Sky Sports", SKY % "12196")],
+    "Cricket": [("BBC Sport", BBCS % "cricket"), ("The Guardian", GU % "sport/cricket"), ("Sky Sports", SKY % "12341"),
+                ("ESPNcricinfo", "https://www.espncricinfo.com/rss/content/story/feeds/0.xml"), ("Wisden", "https://www.wisden.com/feed")],
+    "Motor racing": [("BBC Sport", BBCS % "formula1"), ("BBC Sport", BBCS % "motorsport"), ("The Guardian", GU % "sport/formulaone"),
+                     ("The Guardian", GU % "sport/motorsports"), ("Sky Sports", SKY % "12433"), ("ESPN", "https://www.espn.com/espn/rss/f1/news"),
+                     ("ESPN", "https://www.espn.com/espn/rss/rpm/news"), ("Autosport", "https://www.autosport.com/rss/feed/all"),
+                     ("The Race", "https://www.the-race.com/feed/"), ("Crash.net", "https://www.crash.net/rss/f1")],
+    "Golf": [("BBC Sport", BBCS % "golf"), ("The Guardian", GU % "sport/golf"), ("Sky Sports", SKY % "12176"),
+             ("ESPN", "https://www.espn.com/espn/rss/golf/news"), ("CBS Sports", "https://www.cbssports.com/rss/headlines/golf/"),
+             ("Golf Monthly", "https://www.golfmonthly.com/feeds/all"), ("National Club Golfer", "https://www.nationalclubgolfer.com/feed/")],
+    "NFL": [("BBC Sport", BBCS % "american-football"), ("The Guardian", GU % "sport/nfl"), ("Sky Sports", SKY % "12118"),
+            ("ESPN", "https://www.espn.com/espn/rss/nfl/news"), ("CBS Sports", "https://www.cbssports.com/rss/headlines/nfl/"),
+            ("Pro Football Talk", "https://profootballtalk.nbcsports.com/feed/")],
+    "Grand Tour cycling": [("BBC Sport", BBCS % "cycling"), ("The Guardian", GU % "sport/cycling"),
+                           ("Cyclingnews", "https://www.cyclingnews.com/rss/"), ("Cycling Weekly", "https://www.cyclingweekly.com/feeds/all"),
+                           ("Velo", "https://velo.outsideonline.com/feed/")],
+}
+for _sport, _feeds in SPORTS.items():
+    for _outlet, _url in _feeds:
+        FEEDS.append((_outlet, "sport:" + _sport, _url))
+
 # Titles owned by the same company often share copy, so they count as ONE
 # independent source between them.
 OWNER = {}
@@ -178,6 +209,10 @@ for _group, _titles in {
                        "News Letter"],
     "DC Thomson": ["Press and Journal", "The Courier"],
     "MNA Media": ["Express & Star", "Shropshire Star"],
+    # sport desks belong to the same companies as their news sites
+    "BBC News": ["BBC Sport"], "Sky News": ["Sky Sports"], "CBS News": ["CBS Sports"],
+    "ESPN": ["ESPNcricinfo"], "Motorsport Network": ["Autosport"],
+    "Future plc": ["Cyclingnews", "Cycling Weekly", "Golf Monthly"],
 }.items():
     for _t in _titles:
         OWNER[_t] = _group
@@ -396,12 +431,16 @@ STANDING = {
     "ABC News (Australia)": 0.95, "Deutsche Welle": 0.93, "Channel 4 News": 0.93, "Sky News": 0.92,
     "France 24": 0.9, "CBS News": 0.9, "Al Jazeera": 0.88, "Euronews": 0.87,
     "The Herald": 0.87, "Yorkshire Post": 0.86, "Evening Standard": 0.85,
+    "BBC Sport": 1.0, "Sky Sports": 0.9, "ESPN": 0.9, "ESPNcricinfo": 0.93, "Wisden": 0.88, "CBS Sports": 0.88,
+    "Autosport": 0.9, "The Race": 0.88, "Crash.net": 0.82, "Pro Football Talk": 0.85, "Cyclingnews": 0.9,
+    "Cycling Weekly": 0.88, "Velo": 0.88, "Golf Monthly": 0.85, "National Club Golfer": 0.83,
 }
 COUNTRY = {
     "BBC News": "UK", "The Guardian": "UK", "Sky News": "UK", "Financial Times": "UK", "Channel 4 News": "UK",
     "The New York Times": "US", "The Washington Post": "US", "NPR": "US", "CBS News": "US", "CBC News": "CA",
     "Al Jazeera": "QA", "Deutsche Welle": "DE", "France 24": "FR", "Euronews": "EU", "ABC News (Australia)": "AU",
-    "RTÉ News": "IE",
+    "RTÉ News": "IE", "BBC Sport": "UK", "Sky Sports": "UK", "ESPN": "US", "CBS Sports": "US", "Pro Football Talk": "US",
+    "ESPNcricinfo": "IN", "Velo": "US",
 }
 
 
@@ -470,8 +509,12 @@ def build_stories(items):
         top = max(score.values())
         lead = max((m for m in members if score[id(m)] >= 0.7 * top), key=lambda m: (bool(m["summary"]), m["ts"] or 0))
         world_w = sum(1 for m in members if m["section"] == "world")
-        uk_w = sum(1 if m["section"] == "uk" else 0.5 for m in members if m["section"] != "world")
+        sport_w = sum(1 for m in members if m["section"].startswith("sport:"))
+        uk_w = sum(1 if m["section"] == "uk" else 0.5 for m in members if m["section"].startswith(("uk", "region:")))
         main = "uk" if uk_w > world_w else "world"
+        if sport_w and sport_w >= max(world_w, uk_w):
+            main = "sport"
+        sports = sorted({m["section"].split(":", 1)[1] for m in members if m["section"].startswith("sport:")}) if main == "sport" else []
         regions = sorted({m["section"].split(":", 1)[1] for m in members if m["section"].startswith("region:")}) if main == "uk" else []
         times = [m["ts"] for m in members if m["ts"]]
         image = next((m["image"] for m in sources if m["image"]), None)
@@ -493,6 +536,7 @@ def build_stories(items):
             "image": image,
             "section": main,
             "regions": regions,
+            "sports": sports,
             "outlet_count": len(outlets),
             "independent_count": len(owners),
             "discrepancy": note,
@@ -587,6 +631,7 @@ def gather():
         "stories": stories,
         "regions": regions,
         "areas": areas,
+        "sports": list(SPORTS),
         "feeds": sorted(status, key=lambda s: (s["section"], s["outlet"])),
         "window_hours": MAX_AGE_HOURS,
         "ai_check": ai_status,

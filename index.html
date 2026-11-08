@@ -85,6 +85,11 @@ h2{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:21px;lin
 .privacy{display:block;margin-top:8px;color:var(--muted);font-size:12px}
 .mention{align-self:flex-start;font:600 12px Inter,sans-serif;padding:2px 8px;border-radius:99px;background:var(--chip)}
 .exlist{max-height:360px;overflow:auto}
+.sportsec{margin-top:40px;padding-top:22px;border-top:3px double var(--line)}
+.sporthead{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sporthead h2{font-size:30px}
+.sporthead label{font-size:14px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.sporttag{align-self:flex-start;font:600 12px Inter,sans-serif;padding:2px 8px;border-radius:99px;background:var(--chip)}
 .legend{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
 .sum{color:var(--muted);margin:0}
 .note{background:var(--warn-bg);color:var(--warn);font-size:13px;padding:7px 10px;border-radius:6px}
@@ -167,6 +172,24 @@ footer ol{padding-left:20px}
     <small class="privacy">Your current location stays in your browser: it's only used to work out the nearest area. Towns are looked up with the free postcodes.io service, and only the first half of a postcode (for example LA9) is sent.</small>
   </section>
   <div id="out"><div class="loading"><div class="spin"></div>Fetching, cross-checking and scanning today's news for AI-generated content…<br><small>The first scan can take a few minutes. Later refreshes only check new articles.</small></div></div>
+  <section class="sportsec" id="sportsec" aria-labelledby="sporttitle">
+    <div class="sporthead">
+      <h2 id="sporttitle">Sport</h2>
+      <label>Your sport
+        <select id="sportsel" aria-label="Choose a sport">
+          <option value="">All sports</option>
+          <option value="Football">⚽ Football (soccer)</option>
+          <option value="Rugby">🏉 Rugby</option>
+          <option value="Cricket">🏏 Cricket</option>
+          <option value="Motor racing">🏎️ Motor racing</option>
+          <option value="Golf">⛳ Golf</option>
+          <option value="NFL">🏈 NFL</option>
+          <option value="Grand Tour cycling">🚴 Grand Tour cycling</option>
+        </select>
+      </label>
+    </div>
+    <div id="sportout"></div>
+  </section>
 </main>
 
 <footer class="wrap">
@@ -301,6 +324,7 @@ const mentions = (s, place) => {
 $("#date").textContent = new Date().toLocaleDateString("en-GB", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
 $("#min").value = store.get("min", "2");
 $("#sort").value = store.get("sort", "confirmed");
+$("#sportsel").value = store.get("sport", "");
 
 function ago(ts){
   if(!ts) return "";
@@ -391,6 +415,7 @@ function card(s, lead){
         <span class="badge${n >= 4 ? " strong" : ""}">✓ ${n} independent outlets</span>
       </div>
       <div class="meter" aria-hidden="true"><i class="${a.rag}" style="width:${a.score}%"></i></div>
+      ${s.section === "sport" ? `<span class="sporttag">${(s.sports || []).map(x => (SPORT_ICON[x] || "") + " " + esc(x)).join(" · ")}</span>` : ""}
       <h2><a href="${url}" target="_blank" rel="noopener noreferrer">${esc(s.headline)}</a></h2>
       ${s.summary ? `<p class="sum">${esc(s.summary)}</p>` : ""}
       ${s.discrepancy ? `<div class="note">⚠ ${esc(s.discrepancy)}</div>` : ""}
@@ -406,13 +431,38 @@ function card(s, lead){
     </div></article>`;
 }
 
-function render(){
+const SPORT_ICON = {"Football": "⚽", "Rugby": "🏉", "Cricket": "🏏", "Motor racing": "🏎️", "Golf": "⛳", "NFL": "🏈", "Grand Tour cycling": "🚴"};
+function common(list){
+  const min = +$("#min").value;
+  const q = $("#q").value.trim().toLowerCase();
+  list = list.filter(s => s.independent_count >= min);
+  if(q) list = list.filter(s => (s.headline + " " + s.summary + " " + s.sources.map(x => x.title).join(" ")).toLowerCase().includes(q));
+  const sort = $("#sort").value;
+  if(sort === "score") list = [...list].sort((x, y) => y.authenticity.score - x.authenticity.score);
+  if(sort === "latest") list = [...list].sort((x, y) => (y.latest || 0) - (x.latest || 0));
+  return list;
+}
+function renderSport(){
+  if(!data) return;
+  const pick = $("#sportsel").value;
+  let list = data.stories.filter(s => s.section === "sport" && (!pick || (s.sports || []).includes(pick)));
+  list = common(list);
+  if(!list.length){
+    const off = pick === "Grand Tour cycling" ? "<br>The Grand Tours (Giro, Tour de France, Vuelta) run from May to September, so there's less cycling news out of season." : "";
+    $("#sportout").innerHTML = `<div class="empty">No ${pick ? esc(pick) + " " : "sport "}stories have been confirmed by ${$("#min").value}+ independent outlets yet.${off}</div>`;
+    return;
+  }
+  $("#sportout").innerHTML = `<div class="grid">${list.map(s => card(s, false)).join("")}</div>`;
+}
+function render(){ renderNews(); renderSport(); }
+function renderNews(){
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
   $("#locpanel").hidden = tab !== "local";
   if(!data) return;
   const min = +$("#min").value;
   const q = $("#q").value.trim().toLowerCase();
   let list = data.stories.filter(s => s.independent_count >= min);
+  list = list.filter(s => s.section !== "sport");
   if(tab === "world") list = list.filter(s => s.section === "world");
   if(tab === "uk") list = list.filter(s => s.section === "uk");
   if(tab === "local"){
@@ -480,6 +530,7 @@ $("#locform").onsubmit = e => { e.preventDefault(); findPlace($("#locq").value);
 $("#geo").onclick = useMyLocation;
 $("#min").onchange = e => { store.set("min", e.target.value); render(); };
 $("#q").oninput = render;
+$("#sportsel").onchange = e => { store.set("sport", e.target.value); renderSport(); };
 $("#sort").onchange = e => { store.set("sort", e.target.value); render(); };
 $("#refresh").onclick = () => load(true);
 setInterval(() => data && fill(), 60000);

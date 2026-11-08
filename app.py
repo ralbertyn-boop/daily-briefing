@@ -515,7 +515,13 @@ def build_stories(items):
         if sport_w and sport_w >= max(world_w, uk_w):
             main = "sport"
         sports = sorted({m["section"].split(":", 1)[1] for m in members if m["section"].startswith("sport:")}) if main == "sport" else []
-        regions = sorted({m["section"].split(":", 1)[1] for m in members if m["section"].startswith("region:")}) if main == "uk" else []
+        # A story is local only when local outlets carry most of it. Regional papers also run
+        # national and world news, which otherwise leaks into every area's local view.
+        local_n = sum(1 for m in members if m["section"].startswith("region:"))
+        national_n = sum(1 for m in members if m["section"] in ("world", "uk"))
+        local_areas = {m["section"].split(":", 1)[1] for m in members if m["section"].startswith("region:")}
+        is_local = main == "uk" and local_n > national_n and len(local_areas) <= 4
+        regions = sorted(local_areas) if is_local else []
         times = [m["ts"] for m in members if m["ts"]]
         image = next((m["image"] for m in sources if m["image"]), None)
         tolls = set()

@@ -212,6 +212,21 @@ CELEBRITY = [
     ("Deadline", "https://deadline.com/feed/"),
     ("Rolling Stone", "https://www.rollingstone.com/feed/"),
     ("Billboard", "https://www.billboard.com/feed/"),
+    # International: Canada, Europe, Asia-Pacific (incl. Bollywood and K-pop)
+    ("CBC News", "https://www.cbc.ca/webfeed/rss/rss-arts"),
+    ("France 24", "https://www.france24.com/en/culture/rss"),
+    ("Le Monde", "https://www.lemonde.fr/en/culture/rss_full.xml"),
+    ("Euronews", "https://www.euronews.com/rss?level=vertical&name=culture"),
+    ("The Times of India", "https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms"),
+    ("Hindustan Times", "https://www.hindustantimes.com/feeds/rss/entertainment/rssfeed.xml"),
+    ("The Hindu", "https://www.thehindu.com/entertainment/feeder/default.rss"),
+    ("The Indian Express", "https://indianexpress.com/section/entertainment/feed/"),
+    ("NDTV", "https://feeds.feedburner.com/ndtvmovies-latest"),
+    ("Yonhap", "https://en.yna.co.kr/RSS/culture.xml"),
+    ("South China Morning Post", "https://www.scmp.com/rss/322296/feed"),
+    ("The Straits Times", "https://www.straitstimes.com/news/life/rss.xml"),
+    ("The Sydney Morning Herald", "https://www.smh.com.au/rss/culture.xml"),
+    ("NZ Herald", "https://www.nzherald.co.nz/arc/outboundfeeds/rss/section/entertainment/?outputType=xml"),
 ]
 for _outlet, _url in CELEBRITY:
     FEEDS.append((_outlet, "celebrity", _url))
@@ -465,6 +480,9 @@ STANDING = {
     "The Irish Times": 0.93, "NBC News": 0.9, "ABC News (US)": 0.9, "Variety": 0.9, "The Hollywood Reporter": 0.9,
     "Deadline": 0.88, "Billboard": 0.87, "Rolling Stone": 0.86, "Radio Times": 0.86, "NME": 0.84,
     "Digital Spy": 0.8, "E! News": 0.78,
+    "Le Monde": 0.95, "The Hindu": 0.9, "The Indian Express": 0.88, "Hindustan Times": 0.84, "The Times of India": 0.82,
+    "NDTV": 0.82, "Yonhap": 0.9, "South China Morning Post": 0.85, "The Straits Times": 0.88,
+    "The Sydney Morning Herald": 0.9, "NZ Herald": 0.86,
 }
 COUNTRY = {
     "BBC News": "UK", "The Guardian": "UK", "Sky News": "UK", "Financial Times": "UK", "Channel 4 News": "UK",
@@ -473,7 +491,9 @@ COUNTRY = {
     "RTÉ News": "IE", "BBC Sport": "UK", "Sky Sports": "UK", "ESPN": "US", "CBS Sports": "US", "Pro Football Talk": "US",
     "ESPNcricinfo": "IN", "Velo": "US", "The Irish Times": "IE", "NBC News": "US", "ABC News (US)": "US",
     "E! News": "US", "Variety": "US", "The Hollywood Reporter": "US", "Deadline": "US", "Rolling Stone": "US",
-    "Billboard": "US", "Radio Times": "UK", "NME": "UK", "Digital Spy": "UK", "Evening Standard": "UK",
+    "Billboard": "US", "Le Monde": "FR", "The Hindu": "IN", "The Indian Express": "IN", "Hindustan Times": "IN",
+    "The Times of India": "IN", "NDTV": "IN", "Yonhap": "KR", "South China Morning Post": "HK", "The Straits Times": "SG",
+    "The Sydney Morning Herald": "AU", "NZ Herald": "NZ", "Radio Times": "UK", "NME": "UK", "Digital Spy": "UK", "Evening Standard": "UK",
 }
 
 

@@ -2,7 +2,7 @@ name: Build and publish Daily Briefing
 
 on:
   schedule:
-    - cron: "7 * * * *"      # every hour
+    - cron: "7,22,37,52 * * * *"   # four times an hour (GitHub skips some scheduled runs)
   workflow_dispatch:          # "Run workflow" button
   push:
     branches: [main]

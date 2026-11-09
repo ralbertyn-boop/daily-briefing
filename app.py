@@ -497,6 +497,14 @@ COUNTRY = {
 }
 
 
+# UK national, nation and regional outlets not listed in COUNTRY
+UK_OUTLETS = {o for o, sec, _ in FEEDS if sec == "uk" or sec.startswith("region:")}
+
+
+def country_of(outlet):
+    return COUNTRY.get(outlet) or ("UK" if outlet in UK_OUTLETS else None)
+
+
 def authenticity(sources, owners, member_vecs, centroid, has_discrepancy, possible_ai=0):
     """0-98 score with a breakdown the page can show. Never 100: nothing here is certain."""
     n = len(owners)
@@ -599,6 +607,7 @@ def build_stories(items):
             "section": main,
             "regions": regions,
             "sports": sports,
+            "countries": sorted({c for c in (country_of(m["outlet"]) for m in sources) if c}),
             "outlet_count": len(outlets),
             "independent_count": len(owners),
             "discrepancy": note,

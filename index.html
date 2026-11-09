@@ -26,7 +26,7 @@ header{border-bottom:3px double var(--line);padding:22px 0 14px;text-align:cente
 .refnote{font-size:13px;margin-top:6px;color:var(--ok)}
 nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 0}
-.tabs{display:flex;gap:4px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px}
 .tab{border:0;background:none;color:var(--muted);font:600 14px Inter,sans-serif;padding:8px 12px;border-radius:6px;cursor:pointer}
 .tab[aria-selected=true]{background:var(--ink);color:var(--bg)}
 select,input{font:14px Inter,sans-serif;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
@@ -145,6 +145,7 @@ footer ol{padding-left:20px}
       <button class="tab" role="tab" data-tab="world">World</button>
       <button class="tab" role="tab" data-tab="uk">UK</button>
       <button class="tab" role="tab" data-tab="local">Local</button>
+      <button class="tab" role="tab" data-tab="celebrity">⭐ Celebrity</button>
     </div>
     <select id="sort" aria-label="Sort by">
       <option value="confirmed">Most confirmed</option>
@@ -418,6 +419,7 @@ function card(s, lead){
         <span class="badge${n >= 4 ? " strong" : ""}">✓ ${n} independent outlets</span>
       </div>
       <div class="meter" aria-hidden="true"><i class="${a.rag}" style="width:${a.score}%"></i></div>
+      ${s.section === "celebrity" && tab !== "celebrity" ? `<span class="sporttag">⭐ Celebrity</span>` : ""}
       ${s.section === "sport" ? `<span class="sporttag">${(s.sports || []).map(x => (SPORT_ICON[x] || "") + " " + esc(x)).join(" · ")}</span>` : ""}
       <h2><a href="${url}" target="_blank" rel="noopener noreferrer">${esc(s.headline)}</a></h2>
       ${s.summary ? `<p class="sum">${esc(s.summary)}</p>` : ""}
@@ -481,6 +483,7 @@ function renderNews(){
   if(searching && tab === "local" && loc) $("#locmsg").innerHTML = "Searching all news. Clear the search to see local news again.";
   if(!searching && tab === "world") list = list.filter(s => s.section === "world");
   if(!searching && tab === "uk") list = list.filter(s => s.section === "uk");
+  if(!searching && tab === "celebrity") list = list.filter(s => s.section === "celebrity");
   if(!searching && tab === "local"){
     if(!loc){
       $("#out").innerHTML = `<div class="empty">Type a town, city, village or postcode above, use your current location, or choose an area.</div>`;

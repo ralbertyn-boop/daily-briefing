@@ -37,7 +37,7 @@ HERE = Path(__file__).resolve().parent
 # ---------------------------------------------------------------------------
 # Sources. "outlet" is what counts for independence: two BBC feeds reporting
 # the same thing still count as ONE source.
-# section: world | uk | region:<name>
+# section: world | uk | region:<name> | sport:<sport> | celebrity
 # ---------------------------------------------------------------------------
 FEEDS = [
     # World
@@ -190,6 +190,32 @@ for _sport, _feeds in SPORTS.items():
     for _outlet, _url in _feeds:
         FEEDS.append((_outlet, "sport:" + _sport, _url))
 
+# Celebrity and entertainment news, from broadcasters, papers and the main
+# trade titles (no gossip sites). Shown under its own Celebrity button.
+CELEBRITY = [
+    ("BBC News", "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml"),
+    ("The Guardian", GU % "culture"), ("The Guardian", GU % "film"), ("The Guardian", GU % "music"),
+    ("The Guardian", GU % "tv-and-radio"),
+    ("Sky News", "https://feeds.skynews.com/feeds/rss/entertainment.xml"),
+    ("Evening Standard", "https://www.standard.co.uk/showbiz/rss"),
+    ("Radio Times", "https://www.radiotimes.com/feed/"),
+    ("Digital Spy", "https://www.digitalspy.com/rss/all.xml/"),
+    ("NME", "https://www.nme.com/feed"),
+    ("RTÉ News", "https://www.rte.ie/feeds/rss/?index=/entertainment/"),
+    ("The Irish Times", "https://www.irishtimes.com/arc/outboundfeeds/feed-culture/?outputType=xml"),
+    ("CBS News", "https://www.cbsnews.com/latest/rss/entertainment"),
+    ("NBC News", "https://feeds.nbcnews.com/nbcnews/public/pop-culture"),
+    ("ABC News (US)", "https://abcnews.go.com/abcnews/entertainmentheadlines"),
+    ("E! News", "https://www.eonline.com/syndication/feeds/rssfeeds/topstories.xml"),
+    ("Variety", "https://variety.com/feed/"),
+    ("The Hollywood Reporter", "https://www.hollywoodreporter.com/feed/"),
+    ("Deadline", "https://deadline.com/feed/"),
+    ("Rolling Stone", "https://www.rollingstone.com/feed/"),
+    ("Billboard", "https://www.billboard.com/feed/"),
+]
+for _outlet, _url in CELEBRITY:
+    FEEDS.append((_outlet, "celebrity", _url))
+
 # Titles owned by the same company often share copy, so they count as ONE
 # independent source between them.
 OWNER = {}
@@ -211,7 +237,9 @@ for _group, _titles in {
     "MNA Media": ["Express & Star", "Shropshire Star"],
     # sport desks belong to the same companies as their news sites
     "BBC News": ["BBC Sport"], "Sky News": ["Sky Sports"], "CBS News": ["CBS Sports"],
-    "ESPN": ["ESPNcricinfo"], "Motorsport Network": ["Autosport"],
+    "Disney": ["ESPN", "ESPNcricinfo", "ABC News (US)"], "Motorsport Network": ["Autosport"],
+    "NBCUniversal": ["NBC News", "E! News", "Pro Football Talk"],
+    "Penske Media": ["Variety", "The Hollywood Reporter", "Deadline", "Rolling Stone", "Billboard"],
     "Future plc": ["Cyclingnews", "Cycling Weekly", "Golf Monthly"],
 }.items():
     for _t in _titles:
@@ -434,13 +462,18 @@ STANDING = {
     "BBC Sport": 1.0, "Sky Sports": 0.9, "ESPN": 0.9, "ESPNcricinfo": 0.93, "Wisden": 0.88, "CBS Sports": 0.88,
     "Autosport": 0.9, "The Race": 0.88, "Crash.net": 0.82, "Pro Football Talk": 0.85, "Cyclingnews": 0.9,
     "Cycling Weekly": 0.88, "Velo": 0.88, "Golf Monthly": 0.85, "National Club Golfer": 0.83,
+    "The Irish Times": 0.93, "NBC News": 0.9, "ABC News (US)": 0.9, "Variety": 0.9, "The Hollywood Reporter": 0.9,
+    "Deadline": 0.88, "Billboard": 0.87, "Rolling Stone": 0.86, "Radio Times": 0.86, "NME": 0.84,
+    "Digital Spy": 0.8, "E! News": 0.78,
 }
 COUNTRY = {
     "BBC News": "UK", "The Guardian": "UK", "Sky News": "UK", "Financial Times": "UK", "Channel 4 News": "UK",
     "The New York Times": "US", "The Washington Post": "US", "NPR": "US", "CBS News": "US", "CBC News": "CA",
     "Al Jazeera": "QA", "Deutsche Welle": "DE", "France 24": "FR", "Euronews": "EU", "ABC News (Australia)": "AU",
     "RTÉ News": "IE", "BBC Sport": "UK", "Sky Sports": "UK", "ESPN": "US", "CBS Sports": "US", "Pro Football Talk": "US",
-    "ESPNcricinfo": "IN", "Velo": "US",
+    "ESPNcricinfo": "IN", "Velo": "US", "The Irish Times": "IE", "NBC News": "US", "ABC News (US)": "US",
+    "E! News": "US", "Variety": "US", "The Hollywood Reporter": "US", "Deadline": "US", "Rolling Stone": "US",
+    "Billboard": "US", "Radio Times": "UK", "NME": "UK", "Digital Spy": "UK", "Evening Standard": "UK",
 }
 
 
@@ -514,6 +547,9 @@ def build_stories(items):
         main = "uk" if uk_w > world_w else "world"
         if sport_w and sport_w >= max(world_w, uk_w):
             main = "sport"
+        celeb_w = sum(1 for m in members if m["section"] == "celebrity")
+        if celeb_w and celeb_w >= max(world_w, uk_w, sport_w):
+            main = "celebrity"
         sports = sorted({m["section"].split(":", 1)[1] for m in members if m["section"].startswith("sport:")}) if main == "sport" else []
         # A story is local only when local outlets carry most of it. Regional papers also run
         # national and world news, which otherwise leaks into every area's local view.

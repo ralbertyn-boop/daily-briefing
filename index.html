@@ -75,7 +75,6 @@ h2{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:21px;lin
 .ailine{font-size:12px;color:var(--muted)}
 .ailine.warn{color:var(--a)} .ailine.bad{color:var(--r)}
 .aitag{font-size:11px;font-weight:600;color:var(--a);margin-left:4px;cursor:help}
-.toast{position:fixed;right:16px;bottom:16px;max-width:360px;background:var(--r);color:#fff;padding:12px 14px;border-radius:8px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:20;cursor:pointer}
 .locpanel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:18px}
 .locrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .locrow input{flex:1;min-width:200px}
@@ -363,7 +362,7 @@ function aiLine(s){
   return parts.length ? `<div class="ailine ${cls}">${parts.join("<br>")}</div>` : "";
 }
 
-let showEx = false, toasted = false;
+let showEx = false;
 function seenSet(){ try { return new Set(JSON.parse(store.get("seenEx", "[]"))) } catch { return new Set() } }
 function aiBar(){
   const a = data.ai_check;
@@ -389,15 +388,6 @@ function aiBar(){
     if(showEx){ ex.forEach(x => seen.add(x.link)); store.set("seenEx", JSON.stringify([...seen])); }
     aiBar();
   };
-  if(fresh.length && !toasted){
-    toasted = true;
-    const t = document.createElement("div");
-    t.className = "toast";
-    t.innerHTML = `🛑 Excluded ${fresh.length} article${fresh.length > 1 ? "s" : ""} as AI-generated or AI-assisted<br><span style="opacity:.9">${esc(fresh[0].outlet)}: ${esc(fresh[0].title)}</span><br><u>Click to see why</u>`;
-    t.onclick = () => { t.remove(); showEx = false; $("#exbtn").click(); window.scrollTo({top: 0, behavior: "smooth"}); };
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 15000);
-  }
 }
 
 function card(s, lead){

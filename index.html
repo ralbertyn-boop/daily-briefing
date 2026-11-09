@@ -76,9 +76,7 @@ h2{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:21px;lin
 .ailine{font-size:12px;color:var(--muted)}
 .ailine.warn{color:var(--a)} .ailine.bad{color:var(--r)}
 .aitag{font-size:11px;font-weight:600;color:var(--a);margin-left:4px;cursor:help}
-.celebfilter{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:16px;font:600 13px Inter,sans-serif;color:var(--muted)}
-.celebfilter button{border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 13px Inter,sans-serif;padding:6px 12px;border-radius:99px;cursor:pointer}
-.celebfilter button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+[hidden]{display:none!important}
 .locpanel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:18px}
 .locrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .locrow input{flex:1;min-width:200px}
@@ -150,6 +148,12 @@ footer ol{padding-left:20px}
       <button class="tab" role="tab" data-tab="local">Local</button>
       <button class="tab" role="tab" data-tab="celebrity">⭐ Celebrity</button>
     </div>
+    <select id="celebsel" aria-label="Celebrity news from" hidden>
+      <option value="">⭐ All celebrity news</option>
+      <option value="ukie">🇬🇧🇮🇪 UK &amp; Ireland</option>
+      <option value="us">🇺🇸 US</option>
+      <option value="intl">🌍 International</option>
+    </select>
     <select id="sort" aria-label="Sort by">
       <option value="confirmed">Most confirmed</option>
       <option value="score">Highest authenticity</option>
@@ -181,13 +185,6 @@ footer ol{padding-left:20px}
 </nav>
 
 <main class="wrap">
-  <div class="celebfilter" id="celebfilter" role="group" aria-label="Celebrity news from" hidden>
-    <span>Show:</span>
-    <button type="button" data-reg="">All</button>
-    <button type="button" data-reg="ukie">🇬🇧🇮🇪 UK &amp; Ireland</button>
-    <button type="button" data-reg="us">🇺🇸 US</button>
-    <button type="button" data-reg="intl">🌍 International</button>
-  </div>
   <section class="locpanel" id="locpanel" hidden>
     <form class="locrow" id="locform">
       <input id="locq" type="search" placeholder="Town, city, village or UK postcode" aria-label="Town, city, village or UK postcode" autocomplete="off">
@@ -485,6 +482,7 @@ function searchNote(){
 function renderNews(){
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
   $("#locpanel").hidden = tab !== "local";
+  $("#celebsel").hidden = tab !== "celebrity";
   if(!data) return;
   const min = +$("#min").value;
   const q = $("#q").value.trim().toLowerCase();
@@ -494,8 +492,6 @@ function renderNews(){
   if(searching && tab === "local" && loc) $("#locmsg").innerHTML = "Searching all news. Clear the search to see local news again.";
   if(!searching && tab === "world") list = list.filter(s => s.section === "world");
   if(!searching && tab === "uk") list = list.filter(s => s.section === "uk");
-  $("#celebfilter").hidden = tab !== "celebrity" || searching;
-  document.querySelectorAll("#celebfilter button").forEach(b => b.setAttribute("aria-pressed", b.dataset.reg === celebReg));
   if(!searching && tab === "celebrity"){
     list = list.filter(s => s.section === "celebrity");
     const cs = s => s.countries || [];
@@ -578,7 +574,8 @@ $("#region").onchange = e => {
 };
 $("#locform").onsubmit = e => { e.preventDefault(); findPlace($("#locq").value); };
 $("#geo").onclick = useMyLocation;
-document.querySelectorAll("#celebfilter button").forEach(b => b.onclick = () => { celebReg = b.dataset.reg; store.set("celebreg", celebReg); render(); });
+$("#celebsel").value = celebReg;
+$("#celebsel").onchange = e => { celebReg = e.target.value; store.set("celebreg", celebReg); render(); };
 $("#min").onchange = e => { store.set("min", e.target.value); render(); };
 $("#q").oninput = render;
 $("#searchform").onsubmit = e => {

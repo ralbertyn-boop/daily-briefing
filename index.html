@@ -24,6 +24,8 @@ header{border-bottom:3px double var(--line);padding:22px 0 14px;text-align:cente
 .date{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.12em;margin-top:4px}
 .stats{color:var(--muted);font-size:13px;margin-top:8px}
 .refnote{font-size:13px;margin-top:6px;color:var(--ok)}
+.lastup{font:13px Inter,sans-serif;color:var(--muted);white-space:nowrap}
+.lastup b{color:var(--ink);font-weight:600}
 nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 0}
 .tabs{display:flex;flex-wrap:wrap;gap:4px}
@@ -181,6 +183,7 @@ footer ol{padding-left:20px}
       <button class="btn searchbtn" type="submit">🔍 Search</button>
     </form>
     <button class="btn" id="refresh">Refresh</button>
+    <span class="lastup" id="lastup"></span>
   </div>
 </nav>
 
@@ -529,6 +532,12 @@ function fill(){
   const outlets = new Set(ok.map(f => f.outlet));
   $("#stats").textContent = `Updated ${ago(data.generated)} · ${data.articles_scanned} articles from ${outlets.size} outlets checked · ${data.stories.length} stories confirmed by 2+ independent outlets`;
   $("#hrs").textContent = data.window_hours;
+  if(data.generated){
+    const t = new Date(data.generated * 1000);
+    const today = t.toDateString() === new Date().toDateString();
+    const when = t.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}) + (today ? "" : ", " + t.toLocaleDateString([], {day: "numeric", month: "short"}));
+    $("#lastup").innerHTML = `Last updated <b>${when}</b> (${ago(data.generated)})`;
+  }
   aiBar();
   const sel = $("#region");
   sel.innerHTML = `<option value="">Choose…</option>` + (data.areas || []).map(a => `<option>${esc(a.name)}</option>`).join("");

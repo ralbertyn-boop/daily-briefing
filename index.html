@@ -23,7 +23,8 @@ header{border-bottom:3px double var(--line);padding:22px 0 14px;text-align:cente
 .mast{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:clamp(30px,6vw,52px);letter-spacing:-.5px;margin:0}
 .date{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.12em;margin-top:4px}
 .stats{color:var(--muted);font-size:13px;margin-top:8px}
-.refnote{font-size:13px;margin-top:6px;color:var(--ok)}
+.newbar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:10px;align-items:center;background:var(--ink);color:var(--bg);font:600 13px Inter,sans-serif;padding:8px 8px 8px 16px;border-radius:99px;box-shadow:0 4px 16px rgba(0,0,0,.2);white-space:nowrap}
+.newbar button{border:0;background:var(--bg);color:var(--ink);font:600 13px Inter,sans-serif;padding:5px 12px;border-radius:99px;cursor:pointer}
 .lastup{font:13px Inter,sans-serif;color:var(--muted);white-space:nowrap}
 .lastup b{color:var(--ink);font-weight:600}
 nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
@@ -138,7 +139,7 @@ footer ol{padding-left:20px}
   <h1 class="mast">The Daily Briefing</h1>
   <div class="date" id="date"></div>
   <div class="stats" id="stats">&nbsp;</div>
-  <div class="refnote" id="refnote" hidden></div>
+  <div class="newbar" id="newbar" role="status" hidden>🆕 New stories available <button type="button" id="shownew">Show</button></div>
   <div id="aibar"></div>
 </header>
 
@@ -182,7 +183,6 @@ footer ol{padding-left:20px}
       <input type="search" id="q" placeholder="Search all stories" aria-label="Search stories" enterkeyhint="search">
       <button class="btn searchbtn" type="submit">🔍 Search</button>
     </form>
-    <button class="btn" id="refresh">Refresh</button>
     <span class="lastup" id="lastup"></span>
   </div>
 </nav>
@@ -204,7 +204,7 @@ footer ol{padding-left:20px}
     <small class="privacy">Your current location stays in your browser: it's only used to work out the nearest area. Towns are looked up with the free postcodes.io service, and only the first half of a postcode (for example LA9) is sent.</small>
   </section>
   <div id="searchnote"></div>
-  <div id="out"><div class="loading"><div class="spin"></div>Fetching, cross-checking and scanning today's news for AI-generated content…<br><small>The first scan can take a few minutes. Later refreshes only check new articles.</small></div></div>
+  <div id="out"><div class="loading"><div class="spin"></div>Fetching, cross-checking and scanning today's news for AI-generated content…<br><small>The first scan can take a few minutes. Later updates only check new articles.</small></div></div>
   <section class="sportsec" id="sportsec" aria-labelledby="sporttitle">
     <div class="sporthead">
       <h2 id="sporttitle">Sport</h2>
@@ -255,7 +255,6 @@ const store = {
   set(k, v){ try { localStorage.setItem(k, v) } catch {} }
 };
 let data = null;
-const LIVE = ["localhost", "127.0.0.1"].includes(location.hostname);  // local server can refetch on demand
 let tab = store.get("tab", "world");
 let celebReg = store.get("celebreg", "");
 let loc = null;   // {label, lat, lon, place, areas: [names]}
@@ -546,30 +545,34 @@ function fill(){
   $("#feeds").innerHTML = data.feeds.map(f => `<div>${f.ok ? "✓" : `<span class="bad">✗</span>`} ${esc(f.outlet)} <span style="opacity:.7">(${esc(label(f.section))})</span>${f.ok ? "" : ` <span class="bad">unavailable</span>`}</div>`).join("");
 }
 
-function refreshNote(before){
-  const n = $("#refnote");
-  const age = ago(data.generated);
-  if(LIVE) n.textContent = "✓ Refreshed with the latest news.";
-  else if(before && data.generated > before) n.textContent = `✓ Newer news loaded (from ${age}).`;
-  else n.textContent = `✓ You already have the latest news, from ${age}. It updates about every 15 minutes, so try again a little later.`;
-  n.hidden = false;
+// The page checks for a new edition every 3 minutes, and whenever you come back to the tab.
+// If you are reading further down the page, it waits and offers the new stories instead
+// of moving the page under you.
+let pending = null;
+function apply(d){
+  data = d; pending = null;
+  $("#newbar").hidden = true;
+  fill(); render();
 }
-
-async function load(force){
-  $("#refresh").disabled = true;
-  $("#refresh").textContent = "Checking…";
+async function fetchNews(){
+  const r = await fetch("news.json?t=" + Date.now());
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
+}
+async function load(){
+  try{ apply(await fetchNews()); }
+  catch(e){ $("#out").innerHTML = `<div class="empty">Couldn't load the news. It will try again in a few minutes.</div>`; }
+}
+async function check(){
+  if(document.hidden) return;
+  if(!data) return load();
   try{
-    const r = await fetch("news.json?" + (force && LIVE ? "refresh=1" : "t=" + Date.now()));
-    const before = data && data.generated;
-    data = await r.json();
-    fill(); render();
-    if(force) refreshNote(before);
-  }catch(e){
-    $("#out").innerHTML = `<div class="empty">Couldn't load the news. Please try again in a minute.</div>`;
-  }finally{
-    $("#refresh").disabled = false;
-    $("#refresh").textContent = "Refresh";
-  }
+    const d = await fetchNews();
+    if(!(d.generated > data.generated)) return;
+    const reading = window.scrollY > 300 || document.activeElement === $("#q");
+    if(reading){ pending = d; $("#newbar").hidden = false; }
+    else apply(d);
+  }catch(e){}
 }
 
 document.querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.tab; store.set("tab", tab); render(); });
@@ -596,10 +599,12 @@ $("#searchform").onsubmit = e => {
 $("#sportsel").onchange = e => { store.set("sport", e.target.value); renderSport(); };
 $("#sporttop").onclick = e => { e.preventDefault(); window.scrollTo({top: 0, behavior: "smooth"}); };
 $("#sort").onchange = e => { store.set("sort", e.target.value); render(); };
-$("#refresh").onclick = () => load(true);
+$("#shownew").onclick = () => { if(pending) apply(pending); window.scrollTo({top: 0, behavior: "smooth"}); };
 setInterval(() => data && fill(), 60000);
+setInterval(check, 3 * 60000);
+document.addEventListener("visibilitychange", check);
 render();
-load(false);
+load();
 </script>
 </body>
 </html>
